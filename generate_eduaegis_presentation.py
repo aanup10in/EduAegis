@@ -108,7 +108,7 @@ def create_eduaegis_deck(output_filename="EduAegis_IIM_Capstone_Presentation.ppt
     p0.font.color.rgb = COLOR_EMERALD
 
     p1 = tf1.add_paragraph()
-    p1.text = "Responsible AI Tutor & Subjective Grader for Class 9th"
+    p1.text = "Responsible Multi-Subject AI Tutor & Subjective Grader (Classes 8, 9, 10)"
     p1.font.name = "Arial"
     p1.font.size = Pt(24)
     p1.font.bold = True
@@ -116,14 +116,14 @@ def create_eduaegis_deck(output_filename="EduAegis_IIM_Capstone_Presentation.ppt
     p1.space_before = Pt(10)
 
     p2 = tf1.add_paragraph()
-    p2.text = "An Audited, Human-in-the-Loop Pedagogical Assessment Platform with Student Appeal Governance"
+    p2.text = "Physics, Chemistry & Mathematics • Socratic Audio Narration • Controlled Release Governance • Streamlit & Vercel Ready"
     p2.font.name = "Arial"
     p2.font.size = Pt(14)
     p2.font.color.rgb = RGBColor(203, 213, 225)
     p2.space_before = Pt(8)
 
     p3 = tf1.add_paragraph()
-    p3.text = "IIM Capstone Project Presentation  •  Academic Year 2026-2027  •  Vercel & Local Server Hybrid"
+    p3.text = "IIM Capstone Project Presentation  •  Dual Deployment: Streamlit Community Cloud + Vercel Fullstack"
     p3.font.name = "Arial"
     p3.font.size = Pt(12)
     p3.font.bold = True

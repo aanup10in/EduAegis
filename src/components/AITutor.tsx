@@ -18,9 +18,14 @@ import {
   ChevronRight,
   Layers,
   HelpCircle,
-  FileText
+  FileText,
+  Search,
+  GraduationCap,
+  Atom,
+  FlaskConical,
+  Calculator
 } from "lucide-react";
-import { CURRICULUM_DATA, Subject, Chapter, ConceptDetail } from "@/lib/curriculum";
+import { CURRICULUM_DATA, AVAILABLE_BOARDS, Subject, Chapter, ConceptDetail } from "@/lib/curriculum";
 
 interface AITutorProps {
   currentBoard: string;
@@ -37,6 +42,11 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
   const [selectedConcept, setSelectedConcept] = useState<ConceptDetail>(
     classCurriculum.subjects[0].chapters[0].concepts[0]
   );
+
+  // Open box text for custom topic inquiry
+  const [customTopicQuery, setCustomTopicQuery] = useState("");
+  const [isSearchingTopic, setIsSearchingTopic] = useState(false);
+  const [searchedTopicResult, setSearchedTopicResult] = useState<ConceptDetail | null>(null);
 
   // Teaching input modes
   const [learningMode, setLearningMode] = useState<"standard" | "custom_ingest">("standard");
@@ -86,7 +96,38 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
     }
     setRevealedExamplesCount(1);
     setStudentMasteryStatus("learning");
-  }, [selectedConcept, learningMode]);
+  }, [selectedConcept, searchedTopicResult, learningMode]);
+
+  // Search custom topic from internet/curriculum
+  const handleSearchTopic = async () => {
+    if (!customTopicQuery.trim()) {
+      alert("Please type a topic to search.");
+      return;
+    }
+    setIsSearchingTopic(true);
+    try {
+      const res = await fetch("/api/curriculum/fetch-topic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: customTopicQuery.trim(),
+          subject: selectedSubject.id,
+          studentClass: selectedClass,
+          board: currentBoard
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.chapter && data.chapter.concepts.length > 0) {
+        setSearchedTopicResult(data.chapter.concepts[0]);
+        setSelectedConcept(data.chapter.concepts[0]);
+        setSelectedChapter(data.chapter);
+      }
+    } catch (err: any) {
+      alert("Search error: " + err.message);
+    } finally {
+      setIsSearchingTopic(false);
+    }
+  };
 
   // Handle Speech Synthesis
   const handleToggleAudio = () => {
@@ -104,13 +145,12 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
     const scriptToSpeak =
       learningMode === "custom_ingest" && ingestedLesson
         ? ingestedLesson.audioScript
-        : selectedConcept.audioScript;
+        : (searchedTopicResult || selectedConcept).audioScript;
 
     const utterance = new SpeechSynthesisUtterance(scriptToSpeak);
     utterance.rate = speechRate;
     utterance.pitch = 1.0;
 
-    // Pick English friendly voice if available
     const voices = window.speechSynthesis.getVoices();
     const friendlyVoice = voices.find(
       (v) => v.lang.includes("en-IN") || v.lang.includes("en-US") || v.lang.includes("en-GB")
@@ -156,26 +196,29 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
     }
   };
 
+  const activeConceptToDisplay = searchedTopicResult || selectedConcept;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Banner / Breadcrumb */}
+      {/* Top Banner */}
       <div className="bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl border border-indigo-800/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2 text-xs font-semibold text-indigo-300 uppercase tracking-wider mb-1">
-            <span>AI Subjective Tutor</span>
+            <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+            <span>AI Tutor: Concept Learning & Clearing</span>
             <span>•</span>
             <span className="text-emerald-400 font-bold">{currentBoard}</span>
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white">
-            Personalized Socratic Concept Learning
+            Socratic Concept Learning in Simple Audio & Everyday English
           </h1>
           <p className="text-xs text-indigo-200 mt-1 max-w-2xl">
-            Taught in plain, engaging English with conversational audio narration, progressive real-world examples, and multi-modal document/video ingestion.
+            Taught in plain, engaging English with conversational audio narration, progressive real-world examples, and multi-modal document/video ingestion across Physics, Chemistry, and Mathematics.
           </p>
         </div>
 
         {/* Quick Class Selection (8th, 9th, 10th) */}
-        <div className="flex items-center space-x-1.5 bg-slate-950/70 p-1.5 rounded-2xl border border-indigo-700/50">
+        <div className="flex items-center space-x-1.5 bg-slate-950/70 p-1.5 rounded-2xl border border-indigo-700/50 shrink-0">
           {[8, 9, 10].map((c) => (
             <button
               key={c}
@@ -189,7 +232,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               <span>Class {c}th</span>
               {c === 9 && (
                 <span className="text-[9px] bg-emerald-500 text-slate-950 px-1 rounded font-black">
-                  Active
+                  Core
                 </span>
               )}
             </button>
@@ -197,17 +240,70 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
         </div>
       </div>
 
+      {/* Open Box Text for Student to Type ANY Concept/Topic */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+          <span className="flex items-center space-x-1.5">
+            <Search className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Type any topic or doubt to explain in simple English:</span>
+          </span>
+          <span className="text-[11px] font-normal text-slate-500">
+            Concept clearing open box text
+          </span>
+        </label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={customTopicQuery}
+            onChange={(e) => setCustomTopicQuery(e.target.value)}
+            placeholder="e.g. Why do clouds float?, Law of Conservation of Mass, Pythagoras Theorem, Archimedes Principle..."
+            className="flex-1 px-4 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white transition"
+          />
+          <button
+            onClick={handleSearchTopic}
+            disabled={isSearchingTopic || !customTopicQuery.trim()}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 shrink-0"
+          >
+            {isSearchingTopic ? (
+              <span>Synthesizing from Internet...</span>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Explain Concept & Listen</span>
+              </>
+            )}
+          </button>
+        </div>
+        {searchedTopicResult && (
+          <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+            <span>
+              💡 Active Concept Explanation: <strong>{searchedTopicResult.name}</strong>
+            </span>
+            <button
+              onClick={() => {
+                setSearchedTopicResult(null);
+                setCustomTopicQuery("");
+              }}
+              className="text-[11px] underline font-bold text-emerald-700"
+            >
+              Reset to Standard Topics
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Subject Navigation Ribbon */}
       <div>
         <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
           Select Subject for Class {selectedClass}th:
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {classCurriculum.subjects.map((sub) => (
             <button
               key={sub.id}
               onClick={() => {
                 setSelectedSubject(sub);
+                setSearchedTopicResult(null);
                 if (sub.chapters.length > 0) {
                   setSelectedChapter(sub.chapters[0]);
                   if (sub.chapters[0].concepts.length > 0) {
@@ -224,7 +320,13 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               <div
                 className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${sub.accentColor} text-white flex items-center justify-center font-bold shadow`}
               >
-                {sub.name.charAt(0)}
+                {sub.id === "physics" || sub.id === "physics_8" || sub.id === "physics_10" ? (
+                  <Atom className="w-5 h-5" />
+                ) : sub.id.includes("chem") ? (
+                  <FlaskConical className="w-5 h-5" />
+                ) : (
+                  <Calculator className="w-5 h-5" />
+                )}
               </div>
               <div>
                 <div className="text-sm font-bold text-slate-900">{sub.name}</div>
@@ -246,7 +348,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
               <span>Chapters in {selectedSubject.name}</span>
               <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full">
-                NCERT Aligned
+                NCERT
               </span>
             </div>
 
@@ -256,6 +358,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                   key={ch.id}
                   onClick={() => {
                     setSelectedChapter(ch);
+                    setSearchedTopicResult(null);
                     if (ch.concepts.length > 0) {
                       setSelectedConcept(ch.concepts[0]);
                     }
@@ -277,32 +380,37 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
           </div>
 
           {/* Concepts Selector under Chosen Chapter */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
-              <span>Concepts in {selectedChapter.title.split(" ")[0]}</span>
-              <Layers className="w-3.5 h-3.5 text-slate-400" />
-            </div>
+          {selectedChapter.concepts.length > 0 && (
+            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                <span>Concepts in {selectedChapter.title.split(" ")[0]}</span>
+                <Layers className="w-3.5 h-3.5 text-slate-400" />
+              </div>
 
-            <div className="space-y-1.5">
-              {selectedChapter.concepts.map((concept) => (
-                <button
-                  key={concept.id}
-                  onClick={() => setSelectedConcept(concept)}
-                  className={`w-full p-3 rounded-2xl text-left text-xs transition flex items-center justify-between ${
-                    selectedConcept.id === concept.id
-                      ? "bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold"
-                      : "hover:bg-slate-50 text-slate-700 border border-transparent"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>{concept.name}</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-              ))}
+              <div className="space-y-1.5">
+                {selectedChapter.concepts.map((concept) => (
+                  <button
+                    key={concept.id}
+                    onClick={() => {
+                      setSelectedConcept(concept);
+                      setSearchedTopicResult(null);
+                    }}
+                    className={`w-full p-3 rounded-2xl text-left text-xs transition flex items-center justify-between ${
+                      activeConceptToDisplay.id === concept.id
+                        ? "bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold"
+                        : "hover:bg-slate-50 text-slate-700 border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>{concept.name}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Direct Navigation to Grader Button */}
           <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-5 rounded-3xl text-white shadow-lg space-y-3">
@@ -311,7 +419,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               <span>Ready for Assessment?</span>
             </div>
             <p className="text-xs text-indigo-200">
-              Test your knowledge on <strong>{selectedChapter.title}</strong> with our step-by-step subjective AI Grader!
+              Test your subjective problem solving on <strong>{selectedChapter.title}</strong> with step-by-step scoring!
             </p>
             <button
               onClick={() => onNavigateToGrader(selectedChapter.id)}
@@ -325,7 +433,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
 
         {/* Right Column: Concept Teaching Pane */}
         <div className="lg:col-span-8 space-y-5">
-          {/* Mode Switcher: Standard NCERT Concept vs Custom Upload/YouTube */}
+          {/* Mode Switcher */}
           <div className="flex bg-slate-200/80 p-1.5 rounded-2xl">
             <button
               onClick={() => setLearningMode("standard")}
@@ -336,7 +444,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Curriculum & Internet Prepared Explanation (Class 9th)</span>
+              <span>Curriculum & Internet Concept Guide</span>
             </button>
             <button
               onClick={() => setLearningMode("custom_ingest")}
@@ -347,7 +455,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
-              <span>Learn from Custom Document / YouTube Video Link</span>
+              <span>Learn from Notes PDF / YouTube Lecture</span>
             </button>
           </div>
 
@@ -359,7 +467,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                   Ingest External Study Material
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Paste a YouTube lecture link or paste notes from your PDF/Word document. EduAegis will distill it into plain English for Class 9.
+                  Paste a YouTube lecture link or paste notes from your PDF/Word document. EduAegis will synthesize it into plain English for Class 9.
                 </p>
               </div>
 
@@ -485,11 +593,11 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                     {selectedChapter.title}
                   </span>
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                    NCERT Class 9 Standard
+                    {selectedSubject.name} • Class {selectedClass}th
                   </span>
                 </div>
-                <h2 className="text-xl font-black text-slate-900 mt-1">{selectedConcept.name}</h2>
-                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{selectedConcept.summary}</p>
+                <h2 className="text-xl font-black text-slate-900 mt-1">{activeConceptToDisplay.name}</h2>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{activeConceptToDisplay.summary}</p>
               </div>
 
               {/* Audio Teacher Player Bar (Speech Synthesis) */}
@@ -508,7 +616,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                       )}
                     </div>
                     <div className="text-[11px] text-indigo-300">
-                      Explains in plain conversational English like your best school teacher
+                      Explains in plain conversational English like your best subject teacher
                     </div>
                   </div>
                 </div>
@@ -556,18 +664,18 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                   <span>Teacher's Plain English Breakdown</span>
                 </h4>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed font-sans">
-                  {selectedConcept.teacherExplanation}
+                  {activeConceptToDisplay.teacherExplanation}
                 </div>
               </div>
 
               {/* Everyday Analogies */}
-              {selectedConcept.analogies && selectedConcept.analogies.length > 0 && (
+              {activeConceptToDisplay.analogies && activeConceptToDisplay.analogies.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Everyday Real-World Analogies:
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    {selectedConcept.analogies.map((an, idx) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {activeConceptToDisplay.analogies.map((an, idx) => (
                       <div
                         key={idx}
                         className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-snug"
@@ -580,13 +688,13 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               )}
 
               {/* Key Formulas & Units */}
-              {selectedConcept.keyFormulas && selectedConcept.keyFormulas.length > 0 && (
+              {activeConceptToDisplay.keyFormulas && activeConceptToDisplay.keyFormulas.length > 0 && (
                 <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-2">
                   <div className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
                     Core Mathematical Formulas & SI Units:
                   </div>
                   <ul className="space-y-1 text-xs text-indigo-900 font-mono font-medium">
-                    {selectedConcept.keyFormulas.map((f, i) => (
+                    {activeConceptToDisplay.keyFormulas.map((f, i) => (
                       <li key={i} className="flex items-center space-x-2">
                         <span className="text-indigo-500 font-bold">›</span>
                         <span>{f}</span>
@@ -604,13 +712,13 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                     <span>Progressive Examples & Socratic Check</span>
                   </h4>
                   <span className="text-[11px] font-semibold text-slate-500">
-                    Showing {Math.min(revealedExamplesCount, selectedConcept.examples.length)} of{" "}
-                    {selectedConcept.examples.length} examples
+                    Showing {Math.min(revealedExamplesCount, activeConceptToDisplay.examples.length)} of{" "}
+                    {activeConceptToDisplay.examples.length} examples
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  {selectedConcept.examples.slice(0, revealedExamplesCount).map((ex, index) => (
+                  {activeConceptToDisplay.examples.slice(0, revealedExamplesCount).map((ex, index) => (
                     <div
                       key={index}
                       className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2"
@@ -637,7 +745,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                     <span className="font-bold">Student Check:</span> Did you understand this concept, or would you like another example?
                   </div>
                   <div className="flex space-x-2">
-                    {revealedExamplesCount < selectedConcept.examples.length && (
+                    {revealedExamplesCount < activeConceptToDisplay.examples.length && (
                       <button
                         onClick={() => setRevealedExamplesCount((prev) => prev + 1)}
                         className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition"
@@ -662,7 +770,7 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
                 {studentMasteryStatus === "mastered" && (
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center justify-between">
                     <div className="text-xs font-medium">
-                      🎉 <strong>Superb!</strong> You have confirmed understanding of <em>{selectedConcept.name}</em>.
+                      🎉 <strong>Superb!</strong> You have confirmed understanding of <em>{activeConceptToDisplay.name}</em>.
                       Ready to test your subjective problem solving?
                     </div>
                     <button
@@ -676,13 +784,13 @@ export const AITutor: React.FC<AITutorProps> = ({ currentBoard, onNavigateToGrad
               </div>
 
               {/* Authentic References & Links */}
-              {selectedConcept.authenticReferences && selectedConcept.authenticReferences.length > 0 && (
+              {activeConceptToDisplay.authenticReferences && activeConceptToDisplay.authenticReferences.length > 0 && (
                 <div className="pt-3 border-t border-slate-100">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
                     Verified Authentic Curriculum References:
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {selectedConcept.authenticReferences.map((ref, i) => (
+                    {activeConceptToDisplay.authenticReferences.map((ref, i) => (
                       <a
                         key={i}
                         href={ref.url}

@@ -181,6 +181,7 @@ export default function Home() {
         {activeTab === "grader" && !reviewedSubmission && (
           <Grader
             currentBoard={currentBoard}
+            onBoardChange={(newBoard) => setCurrentBoard(newBoard)}
             activeProfile={activeProfile}
             targetChapterId={targetChapterForGrader}
             onSubmissionComplete={handleSubmissionComplete}

@@ -1,0 +1,44 @@
+{
+  "students": [
+    {
+      "id": "std_default_aarav",
+      "name": "Aarav Sharma",
+      "studentClass": 9,
+      "board": "CBSE (All India)",
+      "email": "aarav.sharma@school.edu",
+      "phone": "+91 98765 43210",
+      "cityState": "Bangalore, Karnataka",
+      "createdAt": "2026-11-04T17:19:04.434Z",
+      "lastLoginAt": "2026-11-04T17:19:04.434Z"
+    },
+    {
+      "id": "std_priya",
+      "name": "Priya Patel",
+      "studentClass": 9,
+      "board": "ICSE / CISCE",
+      "email": "priya.patel@icse.org",
+      "phone": "+91 91234 56789",
+      "cityState": "Ahmedabad, Gujarat",
+      "createdAt": "2026-11-04T17:19:04.435Z",
+      "lastLoginAt": "2026-11-04T17:19:04.435Z"
+    }
+  ],
+  "teacherInstructions": {
+    "force_and_laws": {
+      "id": "instr_1",
+      "topicId": "force_and_laws",
+      "specificInstructions": "Focus strictly on proper statement of Newton's 2nd Law (rate of change of momentum). Penalize 0.5 marks if SI units (N, kg, m/s²) are omitted. Allow partial marks for mathematical derivation steps.",
+      "strictSIUnits": true,
+      "partialCreditForSteps": true,
+      "lenientSpelling": true,
+      "weights": {
+        "facts": 0.3,
+        "concepts": 0.4,
+        "terminology": 0.2,
+        "derivation": 0.1
+      },
+      "updatedAt": "2026-11-04T17:19:04.435Z"
+    }
+  },
+  "submissions": []
+}
