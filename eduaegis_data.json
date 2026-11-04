@@ -40,5 +40,308 @@
       "updatedAt": "2026-11-04T17:19:04.435Z"
     }
   },
-  "submissions": []
+  "submissions": [
+    {
+      "id": "sub_1793814625510",
+      "studentId": "std_default_aarav",
+      "studentName": "Aarav Sharma",
+      "board": "CBSE (All India)",
+      "className": "Class 9th",
+      "subjectName": "Physics",
+      "chapterTitle": "Force and Laws of Motion",
+      "topicName": "Force and Laws of Motion",
+      "submittedAt": "2026-11-04T17:50:25.510Z",
+      "totalMaxMarks": 20,
+      "totalAwardedMarks": 5.5,
+      "status": "PENDING_TEACHER_RELEASE",
+      "teacherInstructionsUsed": "Focus strictly on proper statement of Newton's 2nd Law (rate of change of momentum). Penalize 0.5 marks if SI units (N, kg, m/s²) are omitted. Allow partial marks for mathematical derivation steps.",
+      "questions": [
+        {
+          "questionId": "q1",
+          "questionText": "State Newton's Second Law of Motion. Derive the mathematical expression F = ma from this law, defining all terms with their SI units.",
+          "studentAnswer": "newton's second law is F = ma i.e. Force is equal to mass and acceleration",
+          "maxMarks": 5,
+          "awardedMarks": 2.3,
+          "stepBreakdown": [
+            {
+              "stepNumber": 1,
+              "stepFocus": "Statement of Newton's Second Law",
+              "marksAwarded": 0.2,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Partially stated; omitted either 'rate of change of momentum' or 'direction of force'."
+            },
+            {
+              "stepNumber": 2,
+              "stepFocus": "Initial and Final Momentum Formulation",
+              "marksAwarded": 0.3,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Omitted explicit algebraic initial/final momentum steps."
+            },
+            {
+              "stepNumber": 3,
+              "stepFocus": "Substitution of a = (v-u)/t and Proportionality Constant k=1",
+              "marksAwarded": 0.8,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Directly jumped to F = ma without showing intermediate acceleration equivalence."
+            },
+            {
+              "stepNumber": 4,
+              "stepFocus": "Specification of SI Units for All Quantities",
+              "marksAwarded": 1,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Correctly specified SI units for Force (N), Mass (kg), and Acceleration (m/s²)."
+            }
+          ],
+          "strengths": [],
+          "gapsAndMisconceptions": [],
+          "deductionExplanation": "Evaluated strictly per NCERT syllabus rubrics and teacher instructions.",
+          "referenceChapter": "Force and Laws of Motion (NCERT Class 9 - Chapter 8)",
+          "authenticReferences": [
+            {
+              "title": "NCERT Class 9 Physics - Force & Laws of Motion",
+              "url": "https://ncert.nic.in/textbook.php?iesc1=8-15",
+              "source": "NCERT Official Portal"
+            },
+            {
+              "title": "Khan Academy: Newton's Second Law of Motion",
+              "url": "https://www.khanacademy.org/science/in-in-class9th-physics-india/in-in-forces-and-laws-of-motion",
+              "source": "Khan Academy India"
+            },
+            {
+              "title": "HyperPhysics - Georgia State University: Newton's Laws",
+              "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/newt.html",
+              "source": "HyperPhysics"
+            }
+          ]
+        },
+        {
+          "questionId": "q2",
+          "questionText": "Why does a fielder pull his hands backward while catching a fast-moving cricket ball? Explain the physical mechanism using Newton's Second Law.",
+          "studentAnswer": "",
+          "maxMarks": 3,
+          "awardedMarks": 0.7,
+          "stepBreakdown": [
+            {
+              "stepNumber": 1,
+              "stepFocus": "Statement of Newton's Second Law",
+              "marksAwarded": 0.2,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Partially stated; omitted either 'rate of change of momentum' or 'direction of force'."
+            },
+            {
+              "stepNumber": 2,
+              "stepFocus": "Initial and Final Momentum Formulation",
+              "marksAwarded": 0.3,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Omitted explicit algebraic initial/final momentum steps."
+            },
+            {
+              "stepNumber": 3,
+              "stepFocus": "Substitution of a = (v-u)/t and Proportionality Constant k=1",
+              "marksAwarded": 0.2,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Directly jumped to F = ma without showing intermediate acceleration equivalence."
+            },
+            {
+              "stepNumber": 4,
+              "stepFocus": "Specification of SI Units for All Quantities",
+              "marksAwarded": 0,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Did not specify units for physical quantities."
+            }
+          ],
+          "strengths": [],
+          "gapsAndMisconceptions": [
+            "Teacher Directive Violation: SI units (Newton / N, kg, m/s²) were omitted (-1.0).",
+            "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration."
+          ],
+          "deductionExplanation": "Teacher Directive Violation: SI units (Newton / N, kg, m/s²) were omitted (-1.0). Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration.",
+          "referenceChapter": "Force and Laws of Motion (NCERT Class 9 - Chapter 8)",
+          "authenticReferences": [
+            {
+              "title": "NCERT Class 9 Physics - Force & Laws of Motion",
+              "url": "https://ncert.nic.in/textbook.php?iesc1=8-15",
+              "source": "NCERT Official Portal"
+            },
+            {
+              "title": "Khan Academy: Newton's Second Law of Motion",
+              "url": "https://www.khanacademy.org/science/in-in-class9th-physics-india/in-in-forces-and-laws-of-motion",
+              "source": "Khan Academy India"
+            },
+            {
+              "title": "HyperPhysics - Georgia State University: Newton's Laws",
+              "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/newt.html",
+              "source": "HyperPhysics"
+            }
+          ]
+        },
+        {
+          "questionId": "q3",
+          "questionText": "Define Inertia. State its three types with one daily-life example for each. Name the physical quantity that measures inertia.",
+          "studentAnswer": "",
+          "maxMarks": 3,
+          "awardedMarks": 0.4,
+          "stepBreakdown": [
+            {
+              "stepNumber": 1,
+              "stepFocus": "Definition of Inertia",
+              "marksAwarded": 0.4,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Definition lacked scientific precision."
+            },
+            {
+              "stepNumber": 2,
+              "stepFocus": "Three Types of Inertia with Daily Examples",
+              "marksAwarded": 0,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Missing one or more categories of inertia."
+            },
+            {
+              "stepNumber": 3,
+              "stepFocus": "Measurement of Inertia (Mass)",
+              "marksAwarded": 0,
+              "maxMarks": 0.5,
+              "whyAwardedOrDeducted": "Omitted that mass measures inertia."
+            }
+          ],
+          "strengths": [],
+          "gapsAndMisconceptions": [
+            "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration."
+          ],
+          "deductionExplanation": "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration.",
+          "referenceChapter": "Force and Laws of Motion (NCERT Class 9 - Chapter 8)",
+          "authenticReferences": [
+            {
+              "title": "NCERT Class 9 Physics - Force & Laws of Motion",
+              "url": "https://ncert.nic.in/textbook.php?iesc1=8-15",
+              "source": "NCERT Official Portal"
+            },
+            {
+              "title": "Khan Academy: Newton's Second Law of Motion",
+              "url": "https://www.khanacademy.org/science/in-in-class9th-physics-india/in-in-forces-and-laws-of-motion",
+              "source": "Khan Academy India"
+            },
+            {
+              "title": "HyperPhysics - Georgia State University: Newton's Laws",
+              "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/newt.html",
+              "source": "HyperPhysics"
+            }
+          ]
+        },
+        {
+          "questionId": "q4",
+          "questionText": "A motorcar of mass 1200 kg is moving along a straight line with a uniform velocity of 90 km/h. Its velocity is slowed down to 18 km/h in 4 seconds by an unbalanced external force. Calculate the acceleration and the change in momentum. Also calculate the magnitude of the force required.",
+          "studentAnswer": "",
+          "maxMarks": 5,
+          "awardedMarks": 1,
+          "stepBreakdown": [
+            {
+              "stepNumber": 1,
+              "stepFocus": "Velocity Unit Conversion (km/h -> m/s)",
+              "marksAwarded": 0.2,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Missed or incorrect conversion to SI units."
+            },
+            {
+              "stepNumber": 2,
+              "stepFocus": "Acceleration Calculation (a = (v-u)/t)",
+              "marksAwarded": 0.2,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Error in acceleration computation or missing negative sign."
+            },
+            {
+              "stepNumber": 3,
+              "stepFocus": "Change in Momentum Calculation",
+              "marksAwarded": 0.3,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Omitted or miscalculated change in momentum."
+            },
+            {
+              "stepNumber": 4,
+              "stepFocus": "Force Magnitude Calculation and Units",
+              "marksAwarded": 0.3,
+              "maxMarks": 1.5,
+              "whyAwardedOrDeducted": "Incorrect final force value or missing SI unit."
+            }
+          ],
+          "strengths": [],
+          "gapsAndMisconceptions": [
+            "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration."
+          ],
+          "deductionExplanation": "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration.",
+          "referenceChapter": "Force and Laws of Motion (NCERT Class 9 - Chapter 8)",
+          "authenticReferences": [
+            {
+              "title": "NCERT Class 9 Physics - Force & Laws of Motion",
+              "url": "https://ncert.nic.in/textbook.php?iesc1=8-15",
+              "source": "NCERT Official Portal"
+            },
+            {
+              "title": "Khan Academy: Newton's Second Law of Motion",
+              "url": "https://www.khanacademy.org/science/in-in-class9th-physics-india/in-in-forces-and-laws-of-motion",
+              "source": "Khan Academy India"
+            },
+            {
+              "title": "HyperPhysics - Georgia State University: Newton's Laws",
+              "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/newt.html",
+              "source": "HyperPhysics"
+            }
+          ]
+        },
+        {
+          "questionId": "q5",
+          "questionText": "State Newton's Third Law of Motion. Why do action and reaction forces not cancel each other even though they are equal in magnitude and opposite in direction?",
+          "studentAnswer": "",
+          "maxMarks": 4,
+          "awardedMarks": 1.1,
+          "stepBreakdown": [
+            {
+              "stepNumber": 1,
+              "stepFocus": "Statement of Newton's Third Law",
+              "marksAwarded": 0.3,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Incomplete statement of Third Law."
+            },
+            {
+              "stepNumber": 2,
+              "stepFocus": "Forces Act Simultaneously on Two Different Bodies",
+              "marksAwarded": 0.5,
+              "maxMarks": 2,
+              "whyAwardedOrDeducted": "Failed to mention that forces act on different bodies, which is the primary reason they don't cancel."
+            },
+            {
+              "stepNumber": 3,
+              "stepFocus": "Real-world Practical Illustration",
+              "marksAwarded": 0.3,
+              "maxMarks": 1,
+              "whyAwardedOrDeducted": "Missing or unclear example."
+            }
+          ],
+          "strengths": [],
+          "gapsAndMisconceptions": [
+            "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration."
+          ],
+          "deductionExplanation": "Answer is excessively brief. In subjective board exams, full marks require step-by-step elaboration.",
+          "referenceChapter": "Force and Laws of Motion (NCERT Class 9 - Chapter 8)",
+          "authenticReferences": [
+            {
+              "title": "NCERT Class 9 Physics - Force & Laws of Motion",
+              "url": "https://ncert.nic.in/textbook.php?iesc1=8-15",
+              "source": "NCERT Official Portal"
+            },
+            {
+              "title": "Khan Academy: Newton's Second Law of Motion",
+              "url": "https://www.khanacademy.org/science/in-in-class9th-physics-india/in-in-forces-and-laws-of-motion",
+              "source": "Khan Academy India"
+            },
+            {
+              "title": "HyperPhysics - Georgia State University: Newton's Laws",
+              "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/newt.html",
+              "source": "HyperPhysics"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
