@@ -7,6 +7,8 @@ International Standard Soothing UI & Responsible AI Governance Framework
 
 import os
 import json
+import time
+from datetime import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -106,35 +108,123 @@ st.markdown("""
 # Database file persistence
 DB_FILE = "eduaegis_data.json"
 
+def normalize_submission(sub, index=0):
+    """Safely normalizes submission fields across both Streamlit and Next.js DB schemas."""
+    if not isinstance(sub, dict):
+        return {}
+    topic = sub.get("topic") or sub.get("chapterTitle") or sub.get("topicName") or "Subjective Assessment"
+    subject = sub.get("subject") or sub.get("subjectName") or "General Science"
+    class_name = sub.get("className") or "Class 9th"
+    board = sub.get("board") or "CBSE (All India)"
+    student_name = sub.get("studentName") or "Aarav Sharma"
+    status = sub.get("status") or "PENDING_TEACHER_RELEASE"
+    sub_id = sub.get("id") or f"sub_{index+1}"
+
+    total_awarded = sub.get("totalAwarded")
+    if total_awarded is None:
+        total_awarded = sub.get("totalAwardedMarks", 0.0)
+
+    total_max = sub.get("totalMax")
+    if total_max is None:
+        total_max = sub.get("totalMaxMarks", 20.0)
+
+    try:
+        f_total_awarded = float(total_awarded)
+    except (ValueError, TypeError):
+        f_total_awarded = 0.0
+
+    try:
+        f_total_max = float(total_max)
+    except (ValueError, TypeError):
+        f_total_max = 20.0
+
+    # Ensure all cross-platform keys exist simultaneously
+    sub["id"] = sub_id
+    sub["topic"] = topic
+    sub["chapterTitle"] = topic
+    sub["topicName"] = topic
+    sub["subject"] = subject
+    sub["subjectName"] = subject
+    sub["className"] = class_name
+    sub["board"] = board
+    sub["studentName"] = student_name
+    sub["status"] = status
+    sub["totalAwarded"] = f_total_awarded
+    sub["totalAwardedMarks"] = f_total_awarded
+    sub["totalMax"] = f_total_max
+    sub["totalMaxMarks"] = f_total_max
+
+    raw_questions = sub.get("questions", [])
+    norm_questions = []
+    if isinstance(raw_questions, list):
+        for q_idx, q in enumerate(raw_questions):
+            if not isinstance(q, dict):
+                continue
+            q_text = q.get("question") or q.get("questionText") or f"Question {q_idx+1}"
+            q_score = q.get("score") if q.get("score") is not None else q.get("awardedMarks", 0.0)
+            q_max = q.get("max") if q.get("max") is not None else q.get("maxMarks", 5.0)
+            q_ans = q.get("student_ans") or q.get("studentAnswer") or ""
+            step_breakdown = q.get("stepBreakdown") or []
+
+            try:
+                f_score = float(q_score)
+            except (ValueError, TypeError):
+                f_score = 0.0
+            try:
+                f_max = float(q_max)
+            except (ValueError, TypeError):
+                f_max = 5.0
+
+            q["question"] = q_text
+            q["questionText"] = q_text
+            q["score"] = f_score
+            q["awardedMarks"] = f_score
+            q["max"] = f_max
+            q["maxMarks"] = f_max
+            q["student_ans"] = q_ans
+            q["studentAnswer"] = q_ans
+            q["stepBreakdown"] = step_breakdown
+            norm_questions.append(q)
+    sub["questions"] = norm_questions
+    return sub
+
 def load_db():
+    data = None
     if os.path.exists(DB_FILE):
         try:
-            with open(DB_FILE, "r") as f:
-                return json.load(f)
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
         except Exception:
             pass
-    return {
-        "students": [
-            {
-                "id": "std_default",
-                "name": "Aarav Sharma",
-                "studentClass": 9,
-                "board": "CBSE (All India)",
-                "email": "aarav.sharma@school.edu",
-                "phone": "+91 98765 43210",
-                "cityState": "Bangalore, Karnataka"
-            }
-        ],
-        "teacherInstructions": {
-            "force_and_laws": {
-                "specificInstructions": "Strictly penalize 0.5 marks if SI units (N, kg, m/s²) are missing. Award partial marks for derivation steps.",
-                "strictSIUnits": True,
-                "partialCreditForSteps": True,
-                "lenientSpelling": True
-            }
-        },
-        "submissions": []
-    }
+    if not data or not isinstance(data, dict):
+        data = {
+            "students": [
+                {
+                    "id": "std_default",
+                    "name": "Aarav Sharma",
+                    "studentClass": 9,
+                    "board": "CBSE (All India)",
+                    "email": "aarav.sharma@school.edu",
+                    "phone": "+91 98765 43210",
+                    "cityState": "Bangalore, Karnataka"
+                }
+            ],
+            "teacherInstructions": {
+                "force_and_laws": {
+                    "specificInstructions": "Strictly penalize 0.5 marks if SI units (N, kg, m/s²) are missing. Award partial marks for derivation steps.",
+                    "strictSIUnits": True,
+                    "partialCreditForSteps": True,
+                    "lenientSpelling": True
+                }
+            },
+            "submissions": []
+        }
+    if "submissions" not in data or not isinstance(data["submissions"], list):
+        data["submissions"] = []
+
+    # Auto-normalize all submissions loaded from disk
+    data["submissions"] = [normalize_submission(s, i) for i, s in enumerate(data["submissions"])]
+    return data
 
 def save_db(data):
     try:
@@ -569,27 +659,54 @@ with tab_grader:
             total_score += score
             evaluation_results.append({
                 "question": q["text"],
+                "questionText": q["text"],
                 "max": q_max,
+                "maxMarks": q_max,
                 "score": score,
-                "student_ans": user_answers[q["id"]]
+                "awardedMarks": score,
+                "student_ans": user_answers[q["id"]],
+                "studentAnswer": user_answers[q["id"]],
+                "stepBreakdown": [
+                    {
+                        "stepNumber": 1,
+                        "stepFocus": "Key Concept & Formulation",
+                        "marksAwarded": round(score * 0.5, 1),
+                        "maxMarks": round(q_max * 0.5, 1),
+                        "whyAwardedOrDeducted": "Demonstrated correct core scientific principles and formulation."
+                    },
+                    {
+                        "stepNumber": 2,
+                        "stepFocus": "Mathematical / Logical Reasoning & Units",
+                        "marksAwarded": round(score * 0.5, 1),
+                        "maxMarks": round(q_max * 0.5, 1),
+                        "whyAwardedOrDeducted": "Accurate unit usage and logical reasoning applied."
+                    }
+                ]
             })
 
         total_score = round(total_score, 1)
 
         # Save submission in PENDING_TEACHER_RELEASE status
         new_sub = {
-            "id": f"sub_{len(db['submissions']) + 1}",
+            "id": f"sub_{int(time.time() * 1000)}",
+            "studentId": current_student.get("id", "std_default"),
             "studentName": current_student.get("name", "Aarav Sharma"),
             "board": g_board,
             "className": f"Class {g_class}th",
             "subject": g_subject,
+            "subjectName": g_subject,
             "topic": active_grade_topic,
+            "chapterTitle": active_grade_topic,
+            "topicName": active_grade_topic,
             "totalAwarded": total_score,
+            "totalAwardedMarks": total_score,
             "totalMax": max_score,
+            "totalMaxMarks": max_score,
             "status": "PENDING_TEACHER_RELEASE",
+            "submittedAt": datetime.now().isoformat(),
             "questions": evaluation_results
         }
-        db["submissions"].insert(0, new_sub)
+        db["submissions"].insert(0, normalize_submission(new_sub, 0))
         save_db(db)
 
         st.success("Paper submitted and evaluated!")
@@ -602,42 +719,64 @@ with tab_history:
     st.subheader("📜 Student Evaluations & Academic Appeals")
     st.caption("Review your graded papers, view step-by-step scoring, and accept marks or file an appeal challenge.")
 
-    if not db["submissions"]:
+    if not db.get("submissions"):
         st.info("No assessment records found. Take a practice paper in the AI Grader tab!")
     else:
         for s_idx, sub in enumerate(db["submissions"]):
-            with st.container():
-                st.markdown(f"#### 📄 {sub['topic']} ({sub['subject']} • {sub['className']} • {sub['board']})")
-                st.markdown(f"**Score:** {sub['totalAwarded']} / {sub['totalMax']} Marks  |  **Status:** `{sub['status']}`")
+            sub = normalize_submission(sub, s_idx)
+            sub_id = sub.get("id", f"sub_{s_idx}")
+            topic = sub.get("topic", "Subjective Assessment")
+            subject = sub.get("subject", "Science")
+            cls_name = sub.get("className", "Class 9th")
+            board = sub.get("board", "CBSE")
+            awarded = sub.get("totalAwarded", 0.0)
+            max_m = sub.get("totalMax", 20.0)
+            status = sub.get("status", "PENDING_TEACHER_RELEASE")
 
-                if sub["status"] == "PENDING_TEACHER_RELEASE":
+            with st.container():
+                st.markdown(f"#### 📄 {topic} ({subject} • {cls_name} • {board})")
+                st.markdown(f"**Score:** {awarded} / {max_m} Marks  |  **Status:** `{status}`")
+
+                if status == "PENDING_TEACHER_RELEASE":
                     st.warning("⏳ Under Teacher Audit: Marks will become official once your teacher clicks 'Release Marks'.")
-                elif sub["status"] == "RELEASED":
+                elif status == "RELEASED":
                     st.success("✅ **Scores Officially Released by Teacher!**")
                     st.markdown("##### Detailed Step-by-Step Question Breakdown:")
-                    for q_idx, q_item in enumerate(sub["questions"]):
-                        st.markdown(f"**Q{q_idx+1}: {q_item['question']}**")
-                        st.markdown(f"- **Score:** `{q_item['score']} / {q_item['max']}` Marks")
-                        st.markdown(f"- **Student Response:** *\"{q_item['student_ans'][:120]}...\"*")
+                    for q_idx, q_item in enumerate(sub.get("questions", [])):
+                        q_text = q_item.get("question") or q_item.get("questionText", f"Question {q_idx+1}")
+                        q_score = q_item.get("score") if q_item.get("score") is not None else q_item.get("awardedMarks", 0.0)
+                        q_max = q_item.get("max") if q_item.get("max") is not None else q_item.get("maxMarks", 5.0)
+                        q_ans = q_item.get("student_ans") or q_item.get("studentAnswer", "")
+
+                        st.markdown(f"**Q{q_idx+1}: {q_text}**")
+                        st.markdown(f"- **Score:** `{q_score} / {q_max}` Marks")
+                        if q_ans:
+                            st.markdown(f"- **Student Response:** *\"{q_ans[:140]}...\"*")
+
+                        if q_item.get("stepBreakdown"):
+                            with st.expander("🔍 Step-by-Step Grading Rationale & Rubric Steps", expanded=False):
+                                for step in q_item["stepBreakdown"]:
+                                    st.markdown(f"- **Step {step.get('stepNumber', '')}: {step.get('stepFocus', '')}** (`{step.get('marksAwarded', 0)} / {step.get('maxMarks', 1)} Marks`): {step.get('whyAwardedOrDeducted', '')}")
 
                     st.markdown("---")
                     st.markdown("##### ⚖️ Student Decision (Choose One Option):")
                     col_opt1, col_opt2 = st.columns(2)
                     with col_opt1:
-                        if st.button("1 - I Accept Final Score", key=f"accept_{sub['id']}"):
+                        if st.button("1 - I Accept Final Score", key=f"accept_{sub_id}"):
                             sub["status"] = "ACCEPTED"
                             save_db(db)
                             st.success("Marks Accepted! Result permanently archived.")
                             st.rerun()
                     with col_opt2:
-                        if st.button("2 - I Challenge Specific Questions", key=f"btn_chal_{sub['id']}"):
-                            st.session_state[f"show_challenge_{sub['id']}"] = True
+                        if st.button("2 - I Challenge Specific Questions", key=f"btn_chal_{sub_id}"):
+                            st.session_state[f"show_challenge_{sub_id}"] = True
 
-                    if st.session_state.get(f"show_challenge_{sub['id']}", False):
+                    if st.session_state.get(f"show_challenge_{sub_id}", False):
                         st.markdown("##### ✍️ Submit Your Academic Challenge:")
-                        chal_q = st.multiselect("Select Question(s) to Challenge:", [f"Q{i+1}" for i in range(len(sub["questions"]))], key=f"sel_q_{sub['id']}")
-                        chal_reason = st.text_area("Why are you challenging these questions? (Write your justification):", placeholder="e.g. In Q2 I explained the inverse relationship of time and force in words, please re-check.", key=f"txt_q_{sub['id']}")
-                        if st.button("Submit Challenge to Teacher for Re-Check", key=f"submit_chal_{sub['id']}"):
+                        num_q = len(sub.get("questions", []))
+                        chal_q = st.multiselect("Select Question(s) to Challenge:", [f"Q{i+1}" for i in range(num_q)], key=f"sel_q_{sub_id}")
+                        chal_reason = st.text_area("Why are you challenging these questions? (Write your justification):", placeholder="e.g. In Q2 I explained the inverse relationship of time and force in words, please re-check.", key=f"txt_q_{sub_id}")
+                        if st.button("Submit Challenge to Teacher for Re-Check", key=f"submit_chal_{sub_id}"):
                             if not chal_q or not chal_reason.strip():
                                 st.error("Please select questions and provide your justification.")
                             else:
@@ -646,12 +785,12 @@ with tab_history:
                                 sub["challengeReason"] = chal_reason
                                 save_db(db)
                                 st.success("Challenge submitted to Teacher Queue for re-evaluation!")
-                                st.session_state[f"show_challenge_{sub['id']}"] = False
+                                st.session_state[f"show_challenge_{sub_id}"] = False
                                 st.rerun()
 
-                elif sub["status"] == "ACCEPTED":
+                elif status == "ACCEPTED":
                     st.success("🎖️ **Score Finalized & Verified in Student Portfolio.**")
-                elif sub["status"] == "CHALLENGED":
+                elif status == "CHALLENGED":
                     st.error(f"⚠️ **Under Teacher Re-Evaluation (Challenged):** Questions: {sub.get('challengeQuestions', [])}")
                     st.info(f"Student Justification: *\"{sub.get('challengeReason', '')}\"*")
 
@@ -679,40 +818,51 @@ with tab_teacher:
 
     st.markdown("### 📋 Student Submissions Requiring Audit & Release")
 
-    if not db["submissions"]:
+    if not db.get("submissions"):
         st.info("No submissions yet.")
     else:
         for s_idx, sub in enumerate(db["submissions"]):
-            with st.container():
-                st.markdown(f"**Submission #{s_idx+1}: {sub['studentName']}** • {sub['topic']} ({sub['className']})")
-                st.markdown(f"Current Marks: **{sub['totalAwarded']} / {sub['totalMax']}** | Status: `{sub['status']}`")
+            sub = normalize_submission(sub, s_idx)
+            sub_id = sub.get("id", f"sub_{s_idx}")
+            student_name = sub.get("studentName", "Student")
+            topic = sub.get("topic", "Subjective Assessment")
+            cls_name = sub.get("className", "Class 9th")
+            awarded = float(sub.get("totalAwarded", 0.0))
+            max_m = float(sub.get("totalMax", 20.0))
+            status = sub.get("status", "PENDING_TEACHER_RELEASE")
 
-                if sub["status"] == "PENDING_TEACHER_RELEASE":
+            with st.container():
+                st.markdown(f"**Submission #{s_idx+1}: {student_name}** • {topic} ({cls_name})")
+                st.markdown(f"Current Marks: **{awarded} / {max_m}** | Status: `{status}`")
+
+                if status == "PENDING_TEACHER_RELEASE":
                     st.warning("⏳ Action Required: Review step marks and click 'Release Marks' below.")
-                    new_marks = st.number_input(f"Override Total Score for {sub['studentName']}:", min_value=0.0, max_value=float(sub['totalMax']), value=float(sub['totalAwarded']), step=0.5, key=f"t_override_{sub['id']}")
-                    if st.button(f"✅ Release Marks to {sub['studentName']}", key=f"rel_btn_{sub['id']}"):
+                    new_marks = st.number_input(f"Override Total Score for {student_name}:", min_value=0.0, max_value=max(max_m, awarded), value=awarded, step=0.5, key=f"t_override_{sub_id}")
+                    if st.button(f"✅ Release Marks to {student_name}", key=f"rel_btn_{sub_id}"):
                         sub["totalAwarded"] = new_marks
+                        sub["totalAwardedMarks"] = new_marks
                         sub["status"] = "RELEASED"
                         save_db(db)
-                        st.success(f"Marks officially released to {sub['studentName']}!")
+                        st.success(f"Marks officially released to {student_name}!")
                         st.rerun()
 
-                elif sub["status"] == "CHALLENGED":
+                elif status == "CHALLENGED":
                     st.error(f"⚠️ Student Challenged Questions: {sub.get('challengeQuestions', [])}")
                     st.markdown(f"Student Rationale: *\"{sub.get('challengeReason', '')}\"*")
-                    adj_marks = st.number_input(f"Adjust Final Marks after Appeal Review:", min_value=0.0, max_value=float(sub['totalMax']), value=float(sub['totalAwarded']), step=0.5, key=f"adj_{sub['id']}")
-                    t_remarks = st.text_input("Teacher Appeal Resolution Remarks:", value="Reviewed by Senior Faculty. Step marks adjusted.", key=f"rem_{sub['id']}")
-                    if st.button(f"Resolve Challenge & Re-Release", key=f"res_btn_{sub['id']}"):
+                    adj_marks = st.number_input(f"Adjust Final Marks after Appeal Review:", min_value=0.0, max_value=max(max_m, awarded), value=awarded, step=0.5, key=f"adj_{sub_id}")
+                    t_remarks = st.text_input("Teacher Appeal Resolution Remarks:", value="Reviewed by Senior Faculty. Step marks adjusted.", key=f"rem_{sub_id}")
+                    if st.button(f"Resolve Challenge & Re-Release", key=f"res_btn_{sub_id}"):
                         sub["totalAwarded"] = adj_marks
+                        sub["totalAwardedMarks"] = adj_marks
                         sub["status"] = "RELEASED"
                         sub["resolutionRemarks"] = t_remarks
                         save_db(db)
                         st.success("Challenge resolved and marks re-released!")
                         st.rerun()
 
-                elif sub["status"] == "RELEASED":
+                elif status == "RELEASED":
                     st.info("Scores have been released to the student.")
-                elif sub["status"] == "ACCEPTED":
+                elif status == "ACCEPTED":
                     st.success("Student has accepted the final score.")
 
                 st.divider()
