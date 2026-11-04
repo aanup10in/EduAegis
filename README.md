@@ -125,3 +125,4 @@ A slide presentation (`.pptx`) is located at:
 - **Slide 9**: Strategic B2B Business Model & School Scalability.
 - **Slide 10**: Live Prototype Walkthrough & Impact Metrics.
 - **Slide 11**: Ethical Alignment (NITI Aayog / UNESCO AI Ethics) & Q&A.
+"# Edu-Aegis" 
