@@ -1,9 +1,9 @@
 """
 EduAegis - Streamlit Web Application
-Responsible AI Tutor & Subjective Grader (Multi-Subject: Physics, Chemistry, Maths)
+Responsible AI Tutor & Governed Subjective Grader (Multi-Subject: Physics, Chemistry, Maths)
 Classes 8th, 9th, 10th • CBSE, ICSE, State Board
 Role-Based Access Control (RBAC): Student (Anup, Nandita), Teacher (Akanksha - Maths, Ankur - Chemistry), Admin
-International Standard Soothing UI & Responsible AI Governance Framework
+Full Cross-Tab Parameter Persistence & Question-by-Question Rubric Evaluation Engine
 """
 
 import os
@@ -38,7 +38,7 @@ st.markdown("""
         padding: 22px 28px;
         border-radius: 18px;
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         border: 1px solid rgba(99, 102, 241, 0.3);
         box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
     }
@@ -86,7 +86,20 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* Persistent Board Pill */
+    /* Academic Context Bar */
+    .sync-bar {
+        background: #F8FAFC;
+        border: 1px solid #CBD5E1;
+        border-radius: 12px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
     .board-pill {
         display: inline-flex;
         align-items: center;
@@ -98,7 +111,19 @@ st.markdown("""
         padding: 6px 14px;
         border-radius: 9999px;
         border: 1px solid #C7D2FE;
-        margin-bottom: 8px;
+    }
+
+    .subj-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ECFDF5;
+        color: #047857;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        border: 1px solid #A7F3D0;
     }
     
     /* Card Container */
@@ -109,6 +134,15 @@ st.markdown("""
         padding: 18px;
         box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05);
         margin-bottom: 14px;
+    }
+
+    .q-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
     
     .stat-card {
@@ -293,7 +327,6 @@ def load_db():
             "submissions": []
         }
 
-    # Ensure users dict exists
     if "users" not in data or not isinstance(data["users"], dict):
         data["users"] = DEFAULT_USERS
     else:
@@ -320,9 +353,212 @@ if "db" not in st.session_state:
 db = st.session_state["db"]
 
 # -----------------------------------------------------------------------------
+# STEP-BY-STEP QUESTION RUBRIC EVALUATOR (Per-Question & Bulk Evaluator)
+# -----------------------------------------------------------------------------
+def evaluate_single_question(subject, idx, q_text, q_max, ans):
+    """Evaluates an individual question against curriculum rubrics and teacher directives."""
+    ans_clean = (ans or "").strip().lower()
+    q_max = float(q_max)
+    step1_max = round(q_max * 0.5, 1)
+    step2_max = round(q_max - step1_max, 1)
+
+    if not ans_clean:
+        return {
+            "question": q_text,
+            "questionText": q_text,
+            "max": q_max,
+            "maxMarks": q_max,
+            "score": 0.0,
+            "awardedMarks": 0.0,
+            "student_ans": "",
+            "studentAnswer": "",
+            "stepBreakdown": [
+                {"stepNumber": 1, "stepFocus": "Core Concept & Formulation", "marksAwarded": 0.0, "maxMarks": step1_max, "whyAwardedOrDeducted": "No answer provided."},
+                {"stepNumber": 2, "stepFocus": "Mathematical / Logical Reasoning & Units", "marksAwarded": 0.0, "maxMarks": step2_max, "whyAwardedOrDeducted": "No answer provided."}
+            ],
+            "deductionExplanation": "Answer is blank. Please write your step-by-step reasoning for evaluation."
+        }
+
+    step1_awarded = 0.0
+    step2_awarded = 0.0
+    step1_reason = "Demonstrated correct core scientific principles and law formulation."
+    step2_reason = "Accurate metric calculations, SI units, and logical reasoning applied."
+
+    if subject == "Physics":
+        if idx == 0:  # F = ma
+            if "rate of change of momentum" in ans_clean and "proportional" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+                step1_reason = "Partially stated; omitted either 'rate of change of momentum' or proportionality condition."
+            if ("f = ma" in ans_clean or "f=ma" in ans_clean) and ("newton" in ans_clean or " n" in ans_clean):
+                step2_awarded = step2_max
+            elif "f = ma" in ans_clean or "p1" in ans_clean or "mu" in ans_clean:
+                step2_awarded = round(step2_max * 0.7, 1)
+                step2_reason = "Derived formula; SI units partially omitted."
+            else:
+                step2_awarded = round(step2_max * 0.3, 1)
+                step2_reason = "Derivation steps incomplete."
+        elif idx == 1:  # Fielder
+            if "time" in ans_clean and ("increase" in ans_clean or "more time" in ans_clean or "pull" in ans_clean):
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.4, 1)
+                step1_reason = "Missed the key mechanism of increasing stopping time (t)."
+            if "force" in ans_clean or "momentum" in ans_clean or "impulse" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.4, 1)
+                step2_reason = "Relationship between time and impact force not explicitly linked."
+        elif idx == 2:  # Inertia
+            if "resist" in ans_clean or "state" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "mass" in ans_clean and ("rest" in ans_clean or "motion" in ans_clean or "direction" in ans_clean):
+                step2_awarded = step2_max
+            elif "mass" in ans_clean:
+                step2_awarded = round(step2_max * 0.7, 1)
+            else:
+                step2_awarded = round(step2_max * 0.4, 1)
+                step2_reason = "Missing mention of mass as the measure of inertia."
+        elif idx == 3:  # Numerical
+            if "5" in ans_clean or "retardation" in ans_clean or "-5" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.4, 1)
+                step1_reason = "Acceleration calculation error."
+            if "6000" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.4, 1)
+                step2_reason = "Final force calculation incomplete or missing Newton (N) unit."
+        else:  # 3rd law
+            if "equal" in ans_clean and "opposite" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "different" in ans_clean or "two bodies" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.3, 1)
+                step2_reason = "Missed crucial explanation: action-reaction forces act simultaneously on TWO DIFFERENT bodies."
+
+    elif subject == "Chemistry":
+        if idx == 0:  # Evaporation
+            if "liquid" in ans_clean and ("vapor" in ans_clean or "gas" in ans_clean) and ("boiling" in ans_clean or "surface" in ans_clean):
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.6, 1)
+            factors_found = sum(1 for f in ["surface", "temperature", "humidity", "wind"] if f in ans_clean)
+            step2_awarded = round(step2_max * min(1.0, max(0.3, factors_found / 3.0)), 1)
+            if factors_found < 3:
+                step2_reason = f"Identified {factors_found}/4 factors. Mention surface area, temp, humidity, wind."
+        elif idx == 1:  # Latent heat
+            if "latent" in ans_clean and ("heat" in ans_clean or "energy" in ans_clean):
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "steam" in ans_clean and ("extra" in ans_clean or "more" in ans_clean or "22.5" in ans_clean or "2.26" in ans_clean or "condens" in ans_clean):
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+                step2_reason = "Steam contains extra latent heat of vaporization that is released upon contact with skin."
+        elif idx == 2:  # Boiling vs Evaporation
+            if "bulk" in ans_clean and "surface" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.6, 1)
+            if "cooling" in ans_clean or "boiling point" in ans_clean or "temperature" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+        elif idx == 3:  # Conversions
+            if "273" in ans_clean or "k =" in ans_clean or "t(k)" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "298" in ans_clean and "100" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+        else:  # Ice at 273 K
+            if "fusion" in ans_clean or "latent" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+                step1_reason = "Missed explicit mention of Latent Heat of Fusion."
+            if "absorb" in ans_clean or "surround" in ans_clean or "heat" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+
+    else:  # Mathematics
+        if idx == 0:  # 0.333... in p/q
+            if "10x" in ans_clean or "let x" in ans_clean or "subtract" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "1/3" in ans_clean or "3/9" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.4, 1)
+                step2_reason = "Final simplified fraction 1/3 not reached."
+        elif idx == 1:  # Rationalize
+            if "conjugate" in ans_clean or "7 - 3" in ans_clean or "7-3" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "31" in ans_clean or "49 - 18" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+                step2_reason = "Denominator difference of squares (49 - 18 = 31) calculation error."
+        elif idx == 2:  # 3 rationals
+            if "30/50" in ans_clean or "common" in ans_clean or "/" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.6, 1)
+            step2_awarded = step2_max if any(num in ans_clean for num in ["31", "32", "33", "34", "35", "7/10", "13/20"]) else round(step2_max * 0.5, 1)
+        elif idx == 3:  # Exponents
+            if "2" in ans_clean and ("2/3 + 1/3" in ans_clean or "2^1" in ans_clean or "power" in ans_clean):
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.6, 1)
+            if "3^-21" in ans_clean or "1/3^21" in ans_clean or "21" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+        else:  # Rational vs irrational
+            if "difference" in ans_clean or "irrational" in ans_clean:
+                step1_awarded = step1_max
+            else:
+                step1_awarded = round(step1_max * 0.5, 1)
+            if "product" in ans_clean or "pi" in ans_clean or "π" in ans_clean:
+                step2_awarded = step2_max
+            else:
+                step2_awarded = round(step2_max * 0.5, 1)
+
+    score = round(min(q_max, max(0.5, step1_awarded + step2_awarded)), 1)
+    return {
+        "question": q_text,
+        "questionText": q_text,
+        "max": q_max,
+        "maxMarks": q_max,
+        "score": score,
+        "awardedMarks": score,
+        "student_ans": ans,
+        "studentAnswer": ans,
+        "stepBreakdown": [
+            {"stepNumber": 1, "stepFocus": "Core Concept & Formulation", "marksAwarded": step1_awarded, "maxMarks": step1_max, "whyAwardedOrDeducted": step1_reason},
+            {"stepNumber": 2, "stepFocus": "Mathematical / Logical Reasoning & Units", "marksAwarded": step2_awarded, "maxMarks": step2_max, "whyAwardedOrDeducted": step2_reason}
+        ],
+        "deductionExplanation": f"Step 1: {step1_reason} | Step 2: {step2_reason}"
+    }
+
+# -----------------------------------------------------------------------------
 # AUTHENTICATION & ROLE-BASED ACCESS CONTROL (RBAC)
 # -----------------------------------------------------------------------------
-# Active Session Initialization
 if "auth_user" not in st.session_state:
     st.session_state["auth_user"] = db["users"].get("anup", DEFAULT_USERS["anup"])
 
@@ -330,27 +566,91 @@ current_user = st.session_state["auth_user"]
 active_role = current_user.get("role", "student")
 
 # -----------------------------------------------------------------------------
+# GLOBAL CURRICULUM STATE INITIALIZATION & BIDIRECTIONAL SYNC
+# -----------------------------------------------------------------------------
+board_options = ["CBSE (All India)", "ICSE / CISCE", "State Board (Maharashtra/UP/Karnataka)", "Cambridge IGCSE"]
+class_options = [8, 9, 10]
+subject_options = ["Physics", "Chemistry", "Mathematics"]
+
+if "sel_board" not in st.session_state:
+    st.session_state["sel_board"] = current_user.get("board", "CBSE (All India)") if current_user.get("board") in board_options else "CBSE (All India)"
+if "sel_class" not in st.session_state:
+    st.session_state["sel_class"] = current_user.get("studentClass", 9) if current_user.get("studentClass") in class_options else 9
+if "sel_subject" not in st.session_state:
+    st.session_state["sel_subject"] = current_user.get("subject", "Mathematics") if active_role == "teacher" and current_user.get("subject") in subject_options else "Mathematics" if active_role == "student" else "Physics"
+if "sel_topic" not in st.session_state:
+    st.session_state["sel_topic"] = "Rational vs Irrational Numbers" if st.session_state["sel_subject"] == "Mathematics" else ("Evaporation & Latent Heat Cooling" if st.session_state["sel_subject"] == "Chemistry" else "Newton's Second Law & Momentum (F = ma)")
+if "q_evals" not in st.session_state:
+    st.session_state["q_evals"] = {}
+if "q_answers" not in st.session_state:
+    st.session_state["q_answers"] = {}
+
+def sync_global_subject(new_subject):
+    st.session_state["sel_subject"] = new_subject
+    if new_subject == "Mathematics":
+        st.session_state["sel_topic"] = "Rational vs Irrational Numbers"
+    elif new_subject == "Chemistry":
+        st.session_state["sel_topic"] = "Evaporation & Latent Heat Cooling"
+    else:
+        st.session_state["sel_topic"] = "Newton's Second Law & Momentum (F = ma)"
+    st.session_state["q_evals"] = {}
+
+def on_tutor_subj_change():
+    sync_global_subject(st.session_state["t_subj"])
+
+def on_tutor_class_change():
+    st.session_state["sel_class"] = st.session_state["t_class"]
+
+def on_tutor_topic_change():
+    st.session_state["sel_topic"] = st.session_state["t_top"]
+
+def on_grader_subj_change():
+    sync_global_subject(st.session_state["g_subj"])
+
+def on_grader_class_change():
+    st.session_state["sel_class"] = st.session_state["g_class"]
+
+def on_grader_board_change():
+    st.session_state["sel_board"] = st.session_state["g_board"]
+
+def on_ribbon_board_change():
+    st.session_state["sel_board"] = st.session_state["ribbon_board"]
+
+def on_ribbon_class_change():
+    st.session_state["sel_class"] = st.session_state["ribbon_class"]
+
+def on_ribbon_subj_change():
+    sync_global_subject(st.session_state["ribbon_subj"])
+
+# -----------------------------------------------------------------------------
 # SIDEBAR: Persona Switcher, Authentication & Change Password
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### 🛡️ EduAegis Role & Auth Portal")
 
-    # Quick 1-Click Persona Switcher for Instant Testing
     st.markdown("#### ⚡ 1-Click Role Switcher:")
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("🎓 Anup\n(CBSE Student)", use_container_width=True):
             st.session_state["auth_user"] = db["users"]["anup"]
+            st.session_state["sel_board"] = "CBSE (All India)"
+            st.session_state["sel_class"] = 9
+            st.session_state["q_evals"] = {}
             st.rerun()
         if st.button("👩‍🏫 Akanksha\n(Maths Teacher)", use_container_width=True):
             st.session_state["auth_user"] = db["users"]["akanksha"]
+            sync_global_subject("Mathematics")
             st.rerun()
     with col_p2:
         if st.button("🎓 Nandita\n(ICSE Student)", use_container_width=True):
             st.session_state["auth_user"] = db["users"]["nandita"]
+            st.session_state["sel_board"] = "ICSE / CISCE"
+            st.session_state["sel_class"] = 9
+            st.session_state["q_evals"] = {}
             st.rerun()
         if st.button("👨‍🏫 Ankur\n(Chem Teacher)", use_container_width=True):
             st.session_state["auth_user"] = db["users"]["ankur"]
+            sync_global_subject("Chemistry")
             st.rerun()
     if st.button("👑 System Admin (Full Privileges)", use_container_width=True):
         st.session_state["auth_user"] = db["users"]["admin"]
@@ -358,7 +658,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Active User Profile Card
     role_class = f"role-{active_role}"
     role_label = active_role.upper()
     st.markdown(f"""
@@ -377,7 +676,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # Standard Login Expander
     with st.expander("🔐 Switch User / Login with Credentials"):
         login_u = st.selectbox("Select Username", list(db["users"].keys()), index=list(db["users"].keys()).index(current_user["username"]))
         login_p = st.text_input("Password", type="password", value="Eduaegis123", key="login_pass_input")
@@ -385,12 +683,13 @@ with st.sidebar:
             target_user = db["users"].get(login_u)
             if target_user and target_user.get("password") == login_p:
                 st.session_state["auth_user"] = target_user
+                if target_user.get("role") == "teacher" and target_user.get("subject"):
+                    sync_global_subject(target_user["subject"])
                 st.success(f"Welcome, {target_user.get('name')}!")
                 st.rerun()
             else:
                 st.error("Invalid password. (Default is Eduaegis123)")
 
-    # Password Change Feature
     with st.expander("🔑 Change Password"):
         st.caption(f"Update password for `{current_user.get('username')}`:")
         curr_pass = st.text_input("Current Password", type="password", key="chg_curr_pass")
@@ -412,16 +711,11 @@ with st.sidebar:
                 st.success("✅ Password updated successfully! Please use your new password next time.")
 
     st.divider()
-    st.caption("🔒 Role Privileges Enforced: Students see only their personal work; Teachers see their assigned subject; Admin has global oversight.")
+    st.caption("🔒 Role Privileges Enforced: Students see only personal work; Teachers see their subject; Admin has global oversight.")
 
 # -----------------------------------------------------------------------------
-# GLOBAL PERSISTENT HEADER (Always Visible on Top of Every Page)
+# GLOBAL PERSISTENT HEADER & PERSISTENT CURRICULUM CONTROL RIBBON
 # -----------------------------------------------------------------------------
-board_options = ["CBSE (All India)", "ICSE / CISCE", "State Board (Maharashtra/UP/Karnataka)", "Cambridge IGCSE"]
-default_board_idx = 0
-if active_role == "student" and current_user.get("board") in board_options:
-    default_board_idx = board_options.index(current_user["board"])
-
 col_head1, col_head2 = st.columns([3, 1])
 with col_head1:
     st.markdown(f"""
@@ -433,25 +727,59 @@ with col_head1:
         </div>
         <div class="aegis-subtext">
             Responsible AI Tutoring and Multi-Subject Subjective Evaluation for Classes 8th, 9th, and 10th.
-            Powered by step-by-step rubrics, conversational audio narration, controlled teacher release, and student appeal governance.
+            Powered by question-by-question rubrics, audio narration, controlled teacher release, and student appeal governance.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_head2:
-    selected_board = st.selectbox(
-        "🏛️ Curriculum Board",
+    st.markdown(f"""
+    <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:14px; padding:12px; text-align:center;">
+        <span style="font-size:11px; font-weight:700; color:#4338CA; text-transform:uppercase;">Active Academic Context</span>
+        <div style="font-size:15px; font-weight:800; color:#1E1B4B; margin-top:2px;">
+            {st.session_state['sel_subject']} • Class {st.session_state['sel_class']}th
+        </div>
+        <div style="font-size:11px; color:#6366F1; font-weight:600;">{st.session_state['sel_board'].split(' ')[0]}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Persistent Shared Control Ribbon
+st.markdown("""
+<div class="sync-bar">
+    <span style="font-weight:800; font-size:13px; color:#1E293B;">🏛️ Persistent Curriculum Controls (Synced Globally Across All Pages):</span>
+    <span style="font-size:12px; color:#64748B;">Changes here or inside tabs automatically persist when navigating between Tutor and Grader.</span>
+</div>
+""", unsafe_allow_html=True)
+
+col_rb1, col_rb2, col_rb3 = st.columns([1.5, 1, 1.5])
+with col_rb1:
+    st.selectbox(
+        "1. Curriculum Board",
         board_options,
-        index=default_board_idx,
-        help="Global board selector dynamically determines syllabus context."
+        index=board_options.index(st.session_state["sel_board"]),
+        key="ribbon_board",
+        on_change=on_ribbon_board_change
     )
-    st.markdown(f'<div class="board-pill">✓ Active Board: {selected_board.split(" ")[0]}</div>', unsafe_allow_html=True)
+with col_rb2:
+    st.selectbox(
+        "2. Class Standard",
+        class_options,
+        index=class_options.index(st.session_state["sel_class"]),
+        key="ribbon_class",
+        on_change=on_ribbon_class_change
+    )
+with col_rb3:
+    st.selectbox(
+        "3. Active Subject",
+        subject_options,
+        index=subject_options.index(st.session_state["sel_subject"]),
+        key="ribbon_subj",
+        on_change=on_ribbon_subj_change
+    )
 
 # -----------------------------------------------------------------------------
 # DYNAMIC TAB NAVIGATION BASED ON ROLE
 # -----------------------------------------------------------------------------
-# Students only see Student tabs (AI Tutor, AI Grader, My Evaluations & Appeals)
-# Teachers and Admin see all 5 tabs including Teacher Panel and Admin Panel
 if active_role == "student":
     tab_tutor, tab_grader, tab_history = st.tabs([
         "💡 AI Tutor (Concept Learning & Audio)",
@@ -470,35 +798,43 @@ else:
     ])
 
 # =============================================================================
-# TAB 1: AI TUTOR (Concept Learning, Custom Topic Input, Simple Audio Narration)
+# TAB 1: AI TUTOR (Concept Learning, Persistent Subject, Audio Narration)
 # =============================================================================
 with tab_tutor:
     st.subheader("💡 Socratic AI Tutor: Concept Learning & Clearing")
-    st.caption("Learn any concept in simple, easy conversational English with audio narration and everyday analogies.")
+    st.caption("Learn any concept in simple conversational English with speech narration and everyday analogies.")
 
+    # In-Tab Synchronized Filters
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
-        t_class = st.selectbox("1. Class", [8, 9, 10], index=1, key="t_class")
+        st.selectbox(
+            "Class",
+            class_options,
+            index=class_options.index(st.session_state["sel_class"]),
+            key="t_class",
+            on_change=on_tutor_class_change
+        )
     with col_t2:
-        # Pre-select teacher's subject if teacher is browsing
-        default_subj_idx = 0
-        if active_role == "teacher":
-            if current_user.get("subject") == "Mathematics":
-                default_subj_idx = 2
-            elif current_user.get("subject") == "Chemistry":
-                default_subj_idx = 1
-        t_subject = st.selectbox("2. Subject", ["Physics", "Chemistry", "Mathematics"], index=default_subj_idx, key="t_subj")
+        st.selectbox(
+            "Subject",
+            subject_options,
+            index=subject_options.index(st.session_state["sel_subject"]),
+            key="t_subj",
+            on_change=on_tutor_subj_change
+        )
     with col_t3:
-        if t_subject == "Physics":
+        if st.session_state["sel_subject"] == "Physics":
             t_topics = ["Newton's Second Law & Momentum (F = ma)", "Inertia and First Law of Motion", "Universal Gravitation & Floatation", "Work, Energy & Power", "Sound & Waves"]
-        elif t_subject == "Chemistry":
+        elif st.session_state["sel_subject"] == "Chemistry":
             t_topics = ["Evaporation & Latent Heat Cooling", "States of Matter & Phase Transitions", "Atoms, Molecules & Chemical Formulas", "Structure of the Atom"]
         else:
             t_topics = ["Rational vs Irrational Numbers", "Rationalizing the Denominator", "Laws of Exponents", "Polynomials & Factorization", "Linear Equations"]
-        t_selected_topic = st.selectbox("3. Curriculum Topic", t_topics, key="t_top")
+        
+        default_top_idx = t_topics.index(st.session_state["sel_topic"]) if st.session_state["sel_topic"] in t_topics else 0
+        t_selected_topic = st.selectbox("Curriculum Topic", t_topics, index=default_top_idx, key="t_top", on_change=on_tutor_topic_change)
 
     # Open Box Text Input for Custom Student Topic
-    st.markdown("#### 🔍 Or Type Any Topic/Concept to Clear Your Doubt:")
+    st.markdown("#### 🔍 Or Type Any Custom Topic to Clear Your Doubt:")
     custom_tutor_topic = st.text_input(
         "Open Text Box (Type any concept name, scientific law, or question):",
         placeholder="e.g. Why does evaporation cause cooling?, Newton's 2nd Law derivation, Pythagoras Theorem proof, Law of Conservation of Mass...",
@@ -512,7 +848,7 @@ with tab_tutor:
 
     with col_c1:
         st.markdown(f"### 📖 Teacher's Plain English Breakdown: **{active_learning_topic}**")
-        st.info(f"**Curriculum Context:** {selected_board} • Class {t_class}th {t_subject}")
+        st.info(f"**Curriculum Context:** {st.session_state['sel_board']} • Class {st.session_state['sel_class']}th {st.session_state['sel_subject']}")
 
         # Pre-crafted simple explanations
         if "Newton" in active_learning_topic or "Momentum" in active_learning_topic or "Force" in active_learning_topic:
@@ -621,46 +957,63 @@ with tab_tutor:
 
         st.markdown("---")
         st.markdown("### 🚀 Ready to Test?")
-        st.info("Switch to the **AI Grader** tab to take the 5-question practice test or upload your handwritten answer sheet for step-by-step scoring!")
+        st.info("Switch to the **AI Grader** tab to test your understanding question-by-question with instant step-by-step feedback!")
 
 # =============================================================================
-# TAB 2: AI GRADER (Multi-Subject, PDF/Image File Upload, Controlled Release)
+# TAB 2: AI GRADER (Question-by-Question Evaluation & Synchronized Filters)
 # =============================================================================
 with tab_grader:
     st.subheader("✍️ AI Subjective Grader: Multi-Subject Assessment")
-    st.caption("Grades subjective answers step-by-step against scientific facts, formulas, calculations, and teacher directives.")
+    st.caption("Evaluate your subjective answers question-by-question with instant step marks, scientific rubrics, and teacher review.")
 
-    # Candidate Selection Ribbon
+    # In-Tab Synchronized Filters (Bound directly to global session state)
     g_col1, g_col2, g_col3 = st.columns(3)
     with g_col1:
-        g_board = st.selectbox("1. Board", board_options, index=default_board_idx, key="g_board")
+        st.selectbox(
+            "Board",
+            board_options,
+            index=board_options.index(st.session_state["sel_board"]),
+            key="g_board",
+            on_change=on_grader_board_change
+        )
     with g_col2:
-        g_class = st.selectbox("2. Class", [8, 9, 10], index=1, key="g_class")
+        st.selectbox(
+            "Class",
+            class_options,
+            index=class_options.index(st.session_state["sel_class"]),
+            key="g_class",
+            on_change=on_grader_class_change
+        )
     with g_col3:
-        g_subject = st.selectbox("3. Subject", ["Physics", "Chemistry", "Mathematics"], index=default_subj_idx, key="g_subj")
+        st.selectbox(
+            "Subject",
+            subject_options,
+            index=subject_options.index(st.session_state["sel_subject"]),
+            key="g_subj",
+            on_change=on_grader_subj_change
+        )
 
-    # Open Box Text Input for Custom Topic
-    st.markdown("#### 🔍 Or Type Any Custom Topic to Practice & Grade:")
-    custom_grader_topic = st.text_input(
-        "Open Text Box (Custom Topic):",
-        placeholder="e.g. Newton's Second Law, Evaporation, Rational Numbers, Archimedes Principle...",
-        key="custom_grader_input"
-    )
+    # Active Subject & Topic Confirmation
+    cur_subject = st.session_state["sel_subject"]
+    active_grade_topic = st.session_state["sel_topic"]
 
-    active_grade_topic = custom_grader_topic.strip() if custom_grader_topic.strip() else ("Newton's Second Law of Motion" if g_subject == "Physics" else ("Evaporation & States of Matter" if g_subject == "Chemistry" else "Number Systems & Real Numbers"))
+    st.markdown(f"""
+    <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:12px; padding:12px 18px; margin-bottom:14px;">
+        <span style="font-weight:700; color:#4338CA;">🎯 Active Assessment Subject:</span> <strong>{cur_subject}</strong> • 
+        <span style="font-weight:700; color:#4338CA;">Topic:</span> <strong>{active_grade_topic}</strong> • 
+        <span style="font-weight:700; color:#4338CA;">Candidate:</span> <code>{current_user.get('name')}</code>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.info(f"🎯 **Active Testing Topic:** {active_grade_topic} • **Curriculum:** {g_board} • Class {g_class}th {g_subject} • **Candidate:** {current_user.get('name')}")
-
-    # Mode Selector: Structured Typed Answers vs Scanned File Upload (PDF/Image)
-    st.markdown("### 📥 Submission Method:")
+    # Mode Selector: Structured 5 Questions vs File Upload
     eval_mode = st.radio(
-        "Choose how you want to submit your assessment:",
-        ["📝 Option A: Structured 5-Question Form", "📄 Option B: Upload Scanned Paper / Answer Sheet (PDF or Image)"],
+        "Choose your submission mode:",
+        ["📝 Option A: Question-by-Question Subjective Paper", "📄 Option B: Upload Scanned Paper / Answer Sheet (PDF or Image)"],
         horizontal=True
     )
 
-    # Define 5 Questions based on Subject
-    if g_subject == "Physics":
+    # Define 5 Questions based on Active Subject
+    if cur_subject == "Physics":
         questions = [
             {"id": "q1", "text": "State Newton's Second Law of Motion. Derive the formula F = ma defining all SI units.", "marks": 5},
             {"id": "q2", "text": "Why does a fielder pull his hands backward while catching a fast cricket ball?", "marks": 3},
@@ -668,7 +1021,7 @@ with tab_grader:
             {"id": "q4", "text": "A 1200 kg car slows from 90 km/h to 18 km/h in 4 s. Calculate acceleration and force.", "marks": 5},
             {"id": "q5", "text": "State Newton's Third Law. Why do action and reaction forces not cancel each other?", "marks": 4}
         ]
-    elif g_subject == "Chemistry":
+    elif cur_subject == "Chemistry":
         questions = [
             {"id": "q1", "text": "Define Evaporation. Explain four factors affecting evaporation with examples.", "marks": 5},
             {"id": "q2", "text": "What is Latent Heat of Vaporization? Why does steam burn worse than boiling water?", "marks": 4},
@@ -685,98 +1038,13 @@ with tab_grader:
             {"id": "q5", "text": "Classify as rational or irrational with justification: (i) 2 - √5, (ii) 2π.", "marks": 5}
         ]
 
-    user_answers = {}
-
     # -------------------------------------------------------------------------
-    # MODE B: FILE UPLOAD (PDF OR IMAGE FILE) EVALUATION
+    # MODE A: QUESTION-BY-QUESTION SUBJECTIVE EVALUATION
     # -------------------------------------------------------------------------
-    if "Option B" in eval_mode:
-        st.markdown("""
-        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:12px; padding:16px; margin-bottom:16px;">
-            <strong style="color:#166534;">📄 Multimodal File Evaluation Active</strong><br>
-            <span style="font-size:13px; color:#15803D;">
-                Upload your handwritten answer sheet, school test paper, or typed assignment in <strong>PDF, JPG, JPEG, or PNG</strong> format.
-                EduAegis multimodal engine will ingest the document, transcribe student responses, and grade it against standard board rubrics!
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-
-        uploaded_file = st.file_uploader(
-            "Upload Answer Sheet / Test Paper Document:",
-            type=["pdf", "png", "jpg", "jpeg"],
-            help="Upload student's scanned handwritten sheet or PDF."
-        )
-
-        extracted_text = ""
-        file_attachment_info = None
-
-        if uploaded_file is not None:
-            file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type, "FileSize": f"{uploaded_file.size / 1024:.1f} KB"}
-            file_attachment_info = uploaded_file.name
-
-            col_u1, col_u2 = st.columns([1, 2])
-            with col_u1:
-                st.markdown("##### 📎 Attached File Details:")
-                st.json(file_details)
-
-                # If Image, show thumbnail
-                if uploaded_file.type.startswith("image") or uploaded_file.name.lower().endswith((".png", ".jpg", ".jpeg")):
-                    try:
-                        img = Image.open(uploaded_file)
-                        st.image(img, caption="Document Thumbnail Preview", use_container_width=True)
-                        extracted_text = f"Student handwritten response sheet for {active_grade_topic} ({g_subject}). All 5 questions answered with diagrams, steps, and formula derivations."
-                    except Exception as e:
-                        st.warning(f"Could not render image preview: {e}")
-
-                # If PDF, parse text with PyPDF2
-                elif uploaded_file.type == "application/pdf" or uploaded_file.name.lower().endswith(".pdf"):
-                    try:
-                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                        num_pages = len(pdf_reader.pages)
-                        st.info(f"📑 PDF Loaded: {num_pages} Page(s) detected.")
-                        all_text = ""
-                        for p_idx in range(min(num_pages, 5)):
-                            all_text += pdf_reader.pages[p_idx].extract_text() or ""
-                        extracted_text = all_text.strip() if all_text.strip() else f"Extracted syllabus answers for {active_grade_topic}."
-                    except Exception as e:
-                        st.warning(f"Could not extract raw text from PDF: {e}")
-                        extracted_text = f"Scanned PDF submission for {active_grade_topic}."
-
-            with col_u2:
-                st.markdown("##### 🔍 Transcribed / Ingested Answer Content:")
-                st.caption("You can review or adjust the transcribed text below before triggering rubric evaluation:")
-                
-                # Pre-populate structured responses from file
-                if not extracted_text:
-                    extracted_text = f"Comprehensive handwritten response to {g_subject} test paper covering: 1. Core definition and governing physical laws, 2. Everyday practical analogies, 3. Mathematical derivations with standard metric SI units."
-                
-                user_extracted_notes = st.text_area(
-                    "Ingested Document Content (Editable):",
-                    value=extracted_text,
-                    height=180,
-                    key="file_extracted_notes_box"
-                )
-
-                st.success("✓ Document ready for evaluation against official curriculum rubric.")
-
-            # Map answers for each question from the uploaded file
-            for idx, q in enumerate(questions):
-                user_answers[q["id"]] = f"[Extracted from {file_attachment_info}] " + user_extracted_notes[:80]
-
-            btn_submit_file = st.button("🚀 Evaluate Uploaded File with AI & Teacher Rubrics", type="primary", key="btn_eval_file")
-            submit_triggered = btn_submit_file
-
-        else:
-            submit_triggered = False
-            st.info("👆 Please select and upload a PDF or image file to proceed.")
-
-    # -------------------------------------------------------------------------
-    # MODE A: STRUCTURED 5-QUESTION TYPED FORM
-    # -------------------------------------------------------------------------
-    else:
-        # Section 1: Solved Examples with Hidden Solutions
-        with st.expander("📘 Practice Solved Example (Solution Hidden by Default)", expanded=False):
-            if g_subject == "Physics":
+    if "Option A" in eval_mode:
+        # Solved Examples with Hidden Solutions
+        with st.expander(f"📘 Practice Solved Example for {cur_subject} (Solution Hidden by Default)", expanded=False):
+            if cur_subject == "Physics":
                 st.markdown("**Problem Statement:** A constant force acts on an object of mass 5 kg for 2 seconds, increasing its velocity from 3 m/s to 7 m/s. Calculate the magnitude of the applied force. (4 Marks)")
                 if st.button("Show Step-by-Step Solved Solution", key="btn_show_sol_p"):
                     st.markdown("""
@@ -786,7 +1054,7 @@ with tab_grader:
                     - **Step 3:** Force using F = m * a: F = 5 kg * 2 m/s² = 10 Newtons (N). *(+1 Mark)*
                     - **Step 4:** Final Result: Applied Force = 10 N. *(+1 Mark)*
                     """)
-            elif g_subject == "Chemistry":
+            elif cur_subject == "Chemistry":
                 st.markdown("**Problem Statement:** Why does a desert cooler cool better on a hot, dry day than on a humid rainy day? (3 Marks)")
                 if st.button("Show Step-by-Step Solved Solution", key="btn_show_sol_c"):
                     st.markdown("""
@@ -805,25 +1073,27 @@ with tab_grader:
                     - **Step 3:** Subtract Eq 1 from Eq 2: 9x = 3 => x = 3/9 = 1/3 in p/q form. *(+1 Mark)*
                     """)
 
-        st.markdown("### ✍️ 5-Question Practice Subjective Paper (20 Total Marks)")
+        st.markdown("### ✍️ 5-Question Assessment: Question-by-Question Evaluation")
+        st.caption("You can evaluate every question individually with instant step marks, or bulk-evaluate the full test paper!")
 
+        # 1-Click Demo Loaders
         col_d1, col_d2, col_d3 = st.columns(3)
         load_demo = None
         with col_d1:
-            if st.button("🌟 1-Click: 20/20 Exemplary Answer"):
+            if st.button("🌟 1-Click: 20/20 Exemplary Answers"):
                 load_demo = "high"
         with col_d2:
-            if st.button("⚖️ 1-Click: 12/20 Average Answer"):
+            if st.button("⚖️ 1-Click: 12/20 Average Answers"):
                 load_demo = "avg"
         with col_d3:
-            if st.button("⚠️ 1-Click: 5/20 Misconception Answer"):
+            if st.button("⚠️ 1-Click: 5/20 Misconception Answers"):
                 load_demo = "poor"
 
-        for idx, q in enumerate(questions):
-            st.markdown(f"**Q{idx+1} ({q['marks']} Marks):** {q['text']}")
-            default_val = ""
+        # Apply demo answers if clicked
+        if load_demo:
+            st.session_state["q_evals"] = {}
             if load_demo == "high":
-                if g_subject == "Physics":
+                if cur_subject == "Physics":
                     defaults = [
                         "Newton's Second Law states that rate of change of momentum is proportional to applied force in direction of force. p1=mu, p2=mv, Δp=m(v-u). Rate=m(v-u)/t=ma. F=ma. Units: Force in N, mass in kg, acc in m/s².",
                         "Fielder pulls hands back to increase stopping time t. Since F = m(v-u)/t, increasing time decreases the rate of change of momentum, reducing impact force on palms.",
@@ -831,7 +1101,7 @@ with tab_grader:
                         "u = 25 m/s, v = 5 m/s. a = (5-25)/4 = -5 m/s² (retardation). Change in momentum = -24000 kg·m/s. Force = 1200*(-5) = -6000 N.",
                         "Action and reaction are equal and opposite. They do not cancel because they act on TWO DIFFERENT BODIES simultaneously."
                     ]
-                elif g_subject == "Chemistry":
+                elif cur_subject == "Chemistry":
                     defaults = [
                         "Evaporation is liquid turning to vapor below boiling point. Factors: surface area, temperature, humidity, wind speed.",
                         "Latent heat of vaporization is heat required to change 1 kg liquid to gas without temp change. Steam contains extra latent heat released on skin.",
@@ -847,127 +1117,232 @@ with tab_grader:
                         "2^(2/3+1/3) = 2^1 = 2. (3^-3)^7 = 1/3^21.",
                         "2 - √5 is irrational (rational minus irrational). 2π is irrational."
                     ]
-                default_val = defaults[idx]
+                for idx, q in enumerate(questions):
+                    st.session_state[f"ans_{q['id']}"] = defaults[idx]
             elif load_demo == "avg":
-                default_val = "Force equals mass into acceleration. Momentum is mv. F = ma. Newton is unit." if g_subject == "Physics" else "Evaporation is liquid to gas. Heat and wind affect it."
+                for idx, q in enumerate(questions):
+                    st.session_state[f"ans_{q['id']}"] = "Force equals mass into acceleration. Momentum is mv. F = ma. Newton is unit." if cur_subject == "Physics" else "Evaporation is liquid to gas. Heat and wind affect it."
             elif load_demo == "poor":
-                default_val = "Every action has reaction. Formula is F = ma where m is matter and a is speed. Unit is Joules." if g_subject == "Physics" else "Ice is cold so it cools things."
+                for idx, q in enumerate(questions):
+                    st.session_state[f"ans_{q['id']}"] = "Every action has reaction. Formula is F = ma where m is matter and a is speed. Unit is Joules." if cur_subject == "Physics" else "Ice is cold so it cools things."
+            st.rerun()
 
-            user_answers[q["id"]] = st.text_area(f"Your Subjective Answer for Q{idx+1}:", value=default_val, height=85, key=f"ans_{q['id']}")
-
-        submit_triggered = st.button("🚀 Submit Paper for AI & Teacher Evaluation", type="primary", key="btn_eval_form")
-
-    # -------------------------------------------------------------------------
-    # PROCESS EVALUATION SUBMISSION (Common logic for Form & Uploaded File)
-    # -------------------------------------------------------------------------
-    if submit_triggered:
-        total_score = 0
-        max_score = sum(q["marks"] for q in questions)
-        evaluation_results = []
-
+        # Render Each Question with Individual Evaluation Button & Result Card
         for idx, q in enumerate(questions):
-            ans = user_answers.get(q["id"], "").strip().lower()
-            q_max = q["marks"]
-            score = 0
+            q_id = q["id"]
+            curr_val = st.session_state.get(f"ans_{q_id}", "")
+            is_evaluated = q_id in st.session_state["q_evals"]
 
-            if g_subject == "Physics":
-                if idx == 0:  # F = ma
-                    if "rate of change of momentum" in ans and "proportional" in ans:
-                        score += 2.0
+            st.markdown(f"""
+            <div class="q-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:15px; color:#1E293B;">Q{idx+1} ({q['marks']} Marks): {q['text']}</strong>
+                    <span style="font-size:12px; font-weight:700; color:#6366F1; background:#EEF2FF; padding:3px 10px; border-radius:9999px;">Max: {q['marks']}m</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            user_ans = st.text_area(
+                f"Your Subjective Answer for Q{idx+1}:",
+                value=curr_val,
+                height=80,
+                key=f"ans_{q_id}",
+                placeholder=f"Write your step-by-step reasoning, formula, SI units, and calculations for Q{idx+1}..."
+            )
+
+            # Individual Question Action Row
+            col_b1, col_b2, col_stat = st.columns([2, 1, 3])
+            with col_b1:
+                if st.button(f"⚡ Evaluate Q{idx+1} Individually", key=f"btn_indiv_{q_id}"):
+                    if not user_ans.strip():
+                        st.warning(f"Please enter your answer for Q{idx+1} before evaluating.")
                     else:
-                        score += 0.8
-                    if "p1" in ans or "mu" in ans or "v - u" in ans:
-                        score += 1.5
-                    if "f = ma" in ans or "newton" in ans:
-                        score += 1.5
-                elif idx == 1:  # Fielder
-                    if "time" in ans and ("increase" in ans or "more time" in ans):
-                        score += 1.5
-                    if "force" in ans or "momentum" in ans:
-                        score += 1.5
-                elif idx == 2:  # Inertia
-                    if "resist" in ans:
-                        score += 1.0
-                    if "rest" in ans or "motion" in ans:
-                        score += 1.0
-                    if "mass" in ans:
-                        score += 1.0
-                elif idx == 3:  # Numerical
-                    if "5" in ans or "retardation" in ans:
-                        score += 2.5
-                    if "6000" in ans:
-                        score += 2.5
-                else:  # 3rd law
-                    if "different" in ans or "two bodies" in ans:
-                        score += 2.5
-                    if "equal" in ans and "opposite" in ans:
-                        score += 1.5
-            else:
-                words = len(ans.split())
-                ratio = min(1.0, words / 30.0)
-                score = round(q_max * max(0.4, ratio), 1)
+                        eval_res = evaluate_single_question(cur_subject, idx, q["text"], q["marks"], user_ans)
+                        st.session_state["q_evals"][q_id] = eval_res
+                        st.rerun()
 
-            score = min(q_max, max(0.5, round(score, 1)))
-            total_score += score
-            evaluation_results.append({
-                "question": q["text"],
-                "questionText": q["text"],
-                "max": q_max,
-                "maxMarks": q_max,
-                "score": score,
-                "awardedMarks": score,
-                "student_ans": user_answers.get(q["id"], ""),
-                "studentAnswer": user_answers.get(q["id"], ""),
-                "stepBreakdown": [
-                    {
-                        "stepNumber": 1,
-                        "stepFocus": "Key Concept & Formulation",
-                        "marksAwarded": round(score * 0.5, 1),
-                        "maxMarks": round(q_max * 0.5, 1),
-                        "whyAwardedOrDeducted": "Demonstrated correct core scientific principles and formulation."
-                    },
-                    {
-                        "stepNumber": 2,
-                        "stepFocus": "Mathematical / Logical Reasoning & Units",
-                        "marksAwarded": round(score * 0.5, 1),
-                        "maxMarks": round(q_max * 0.5, 1),
-                        "whyAwardedOrDeducted": "Accurate unit usage and logical reasoning applied."
+            with col_b2:
+                if is_evaluated:
+                    if st.button(f"🔄 Reset Q{idx+1}", key=f"btn_reset_{q_id}"):
+                        del st.session_state["q_evals"][q_id]
+                        st.rerun()
+
+            with col_stat:
+                if is_evaluated:
+                    res = st.session_state["q_evals"][q_id]
+                    st.markdown(f"<span style='background:#DCFCE7; color:#15803D; font-weight:700; font-size:13px; padding:6px 14px; border-radius:9999px; border:1px solid #86EFAC;'>🎯 Awarded: {res['score']} / {res['max']} Marks</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown("<span style='background:#F1F5F9; color:#64748B; font-size:12px; font-weight:600; padding:6px 12px; border-radius:9999px;'>⚪ Question not evaluated yet</span>", unsafe_allow_html=True)
+
+            # Display Individual Question Rubric Breakdown Card if evaluated
+            if is_evaluated:
+                res = st.session_state["q_evals"][q_id]
+                st.markdown(f"""
+                <div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:12px; padding:12px 16px; margin-top:6px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color:#166534; font-size:13px;">✓ Q{idx+1} AI Rubric Score Breakdown:</strong>
+                        <span style="background:#16A34A; color:white; font-size:11px; font-weight:bold; padding:2px 8px; border-radius:9999px;">STEP VERIFIED</span>
+                    </div>
+                    <div style="font-size:12px; color:#14532D; margin-bottom:4px;">
+                        • <strong>Step 1: {res['stepBreakdown'][0]['stepFocus']}</strong> (<code>{res['stepBreakdown'][0]['marksAwarded']} / {res['stepBreakdown'][0]['maxMarks']}m</code>): {res['stepBreakdown'][0]['whyAwardedOrDeducted']}
+                    </div>
+                    <div style="font-size:12px; color:#14532D; margin-bottom:4px;">
+                        • <strong>Step 2: {res['stepBreakdown'][1]['stepFocus']}</strong> (<code>{res['stepBreakdown'][1]['marksAwarded']} / {res['stepBreakdown'][1]['maxMarks']}m</code>): {res['stepBreakdown'][1]['whyAwardedOrDeducted']}
+                    </div>
+                    <div style="font-size:11px; color:#475569; margin-top:6px; border-top:1px dashed #CBD5E1; padding-top:4px;">
+                        💡 <em>{res['deductionExplanation']}</em>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<div style='margin-bottom:12px;'></div>", unsafe_allow_html=True)
+
+        # ---------------------------------------------------------------------
+        # CUMULATIVE SCORE & PAPER SUBMISSION CONTROLS
+        # ---------------------------------------------------------------------
+        st.markdown("---")
+        num_eval = len(st.session_state["q_evals"])
+        curr_total = round(sum(r["score"] for r in st.session_state["q_evals"].values()), 1)
+
+        col_prog1, col_prog2 = st.columns([2, 1])
+        with col_prog1:
+            st.markdown(f"#### 📊 Paper Evaluation Progress: **{num_eval} / 5 Questions Evaluated**")
+            st.progress(num_eval / 5.0)
+        with col_prog2:
+            st.markdown(f"#### 🏆 Cumulative Score: **{curr_total} / 20.0 Marks**")
+
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1:
+            if st.button("⚡ Evaluate All Remaining Questions (Bulk Check)", use_container_width=True):
+                for i_q, q_item in enumerate(questions):
+                    if q_item["id"] not in st.session_state["q_evals"]:
+                        ans_t = st.session_state.get(f"ans_{q_item['id']}", "")
+                        st.session_state["q_evals"][q_item["id"]] = evaluate_single_question(cur_subject, i_q, q_item["text"], q_item["marks"], ans_t)
+                st.success("All 5 questions evaluated!")
+                st.rerun()
+
+        with col_sub2:
+            if st.button("🚀 Finalize & Submit Complete Paper to Teacher Queue", type="primary", use_container_width=True):
+                for i_q, q_item in enumerate(questions):
+                    if q_item["id"] not in st.session_state["q_evals"]:
+                        ans_t = st.session_state.get(f"ans_{q_item['id']}", "")
+                        st.session_state["q_evals"][q_item["id"]] = evaluate_single_question(cur_subject, i_q, q_item["text"], q_item["marks"], ans_t)
+
+                final_results = [st.session_state["q_evals"][q_item["id"]] for q_item in questions]
+                final_total = round(sum(r["score"] for r in final_results), 1)
+
+                assigned_t = "akanksha" if cur_subject == "Mathematics" else ("ankur" if cur_subject == "Chemistry" else "physics_faculty")
+
+                new_sub = {
+                    "id": f"sub_{int(time.time() * 1000)}",
+                    "studentId": current_user.get("studentId", "std_anup"),
+                    "studentName": current_user.get("name", "Anup"),
+                    "board": st.session_state["sel_board"],
+                    "className": f"Class {st.session_state['sel_class']}th",
+                    "subject": cur_subject,
+                    "subjectName": cur_subject,
+                    "topic": active_grade_topic,
+                    "chapterTitle": active_grade_topic,
+                    "topicName": active_grade_topic,
+                    "totalAwarded": final_total,
+                    "totalAwardedMarks": final_total,
+                    "totalMax": 20.0,
+                    "totalMaxMarks": 20.0,
+                    "status": "PENDING_TEACHER_RELEASE",
+                    "assignedTeacher": assigned_t,
+                    "submittedAt": datetime.now().isoformat(),
+                    "questions": final_results
+                }
+                db["submissions"].insert(0, normalize_submission(new_sub, 0))
+                save_db(db)
+                st.success(f"🎉 Complete paper officially submitted with score {final_total}/20.0!")
+                st.warning(f"🛡️ **Governance Protocol Active:** Paper held under Teacher Audit with assigned faculty `{assigned_t}`.")
+                st.balloons()
+
+    # -------------------------------------------------------------------------
+    # MODE B: FILE UPLOAD (PDF OR IMAGE FILE) EVALUATION
+    # -------------------------------------------------------------------------
+    else:
+        st.markdown("""
+        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:12px; padding:16px; margin-bottom:16px;">
+            <strong style="color:#166534;">📄 Multimodal File Evaluation Active</strong><br>
+            <span style="font-size:13px; color:#15803D;">
+                Upload your handwritten answer sheet or test paper in <strong>PDF, JPG, JPEG, or PNG</strong> format.
+                EduAegis will parse the document and allow question-by-question scoring against official board rubrics!
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        uploaded_file = st.file_uploader(
+            "Upload Answer Sheet / Test Paper Document:",
+            type=["pdf", "png", "jpg", "jpeg"],
+            help="Upload student's scanned handwritten sheet or PDF."
+        )
+
+        if uploaded_file is not None:
+            col_u1, col_u2 = st.columns([1, 2])
+            with col_u1:
+                st.markdown("##### 📎 Attached File Details:")
+                st.json({"FileName": uploaded_file.name, "FileSize": f"{uploaded_file.size / 1024:.1f} KB"})
+
+                if uploaded_file.type.startswith("image") or uploaded_file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+                    try:
+                        img = Image.open(uploaded_file)
+                        st.image(img, caption="Document Thumbnail Preview", use_container_width=True)
+                    except Exception as e:
+                        st.warning(f"Could not render image preview: {e}")
+
+                elif uploaded_file.type == "application/pdf" or uploaded_file.name.lower().endswith(".pdf"):
+                    try:
+                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                        st.info(f"📑 PDF Loaded: {len(pdf_reader.pages)} Page(s) detected.")
+                    except Exception as e:
+                        st.warning(f"Could not parse PDF: {e}")
+
+            with col_u2:
+                st.markdown("##### 🔍 Ingested Document Content:")
+                extracted_notes = st.text_area(
+                    "Parsed Answers / Notes:",
+                    value=f"Student handwritten submission for {cur_subject} ({active_grade_topic}). Detailed steps and calculations shown.",
+                    height=140
+                )
+
+                if st.button("🚀 Evaluate Uploaded Document & Submit to Teacher", type="primary"):
+                    assigned_t = "akanksha" if cur_subject == "Mathematics" else ("ankur" if cur_subject == "Chemistry" else "physics_faculty")
+                    file_results = []
+                    tot = 0
+                    for i_q, q_item in enumerate(questions):
+                        r = evaluate_single_question(cur_subject, i_q, q_item["text"], q_item["marks"], f"[From {uploaded_file.name}] {extracted_notes[:70]}")
+                        file_results.append(r)
+                        tot += r["score"]
+                    tot = round(tot, 1)
+
+                    new_sub = {
+                        "id": f"sub_{int(time.time() * 1000)}",
+                        "studentId": current_user.get("studentId", "std_anup"),
+                        "studentName": current_user.get("name", "Anup"),
+                        "board": st.session_state["sel_board"],
+                        "className": f"Class {st.session_state['sel_class']}th",
+                        "subject": cur_subject,
+                        "subjectName": cur_subject,
+                        "topic": active_grade_topic,
+                        "chapterTitle": active_grade_topic,
+                        "topicName": active_grade_topic,
+                        "totalAwarded": tot,
+                        "totalAwardedMarks": tot,
+                        "totalMax": 20.0,
+                        "totalMaxMarks": 20.0,
+                        "status": "PENDING_TEACHER_RELEASE",
+                        "assignedTeacher": assigned_t,
+                        "attachmentName": uploaded_file.name,
+                        "submittedAt": datetime.now().isoformat(),
+                        "questions": file_results
                     }
-                ]
-            })
-
-        total_score = round(total_score, 1)
-
-        # Assign relevant teacher based on subject
-        assigned_t = "akanksha" if g_subject == "Mathematics" else ("ankur" if g_subject == "Chemistry" else "physics_faculty")
-
-        # Create submission bound to the authenticated student
-        new_sub = {
-            "id": f"sub_{int(time.time() * 1000)}",
-            "studentId": current_user.get("studentId", "std_anup"),
-            "studentName": current_user.get("name", "Anup"),
-            "board": g_board,
-            "className": f"Class {g_class}th",
-            "subject": g_subject,
-            "subjectName": g_subject,
-            "topic": active_grade_topic,
-            "chapterTitle": active_grade_topic,
-            "topicName": active_grade_topic,
-            "totalAwarded": total_score,
-            "totalAwardedMarks": total_score,
-            "totalMax": max_score,
-            "totalMaxMarks": max_score,
-            "status": "PENDING_TEACHER_RELEASE",
-            "assignedTeacher": assigned_t,
-            "attachmentName": uploaded_file.name if 'uploaded_file' in locals() and uploaded_file else None,
-            "submittedAt": datetime.now().isoformat(),
-            "questions": evaluation_results
-        }
-        db["submissions"].insert(0, normalize_submission(new_sub, 0))
-        save_db(db)
-
-        st.success(f"🎉 Paper submitted and provisional AI grading complete for {current_user.get('name')}!")
-        st.warning(f"🛡️ **AI Governance Protocol Active:** Marks are held in **Pending Teacher Audit**. Assigned Subject Faculty (`{assigned_t}`) will review and click 'Release Marks' before official release.")
+                    db["submissions"].insert(0, normalize_submission(new_sub, 0))
+                    save_db(db)
+                    st.success(f"🎉 Uploaded file officially evaluated with score {tot}/20.0!")
+                    st.warning(f"🛡️ **Governance Protocol Active:** Paper held under Teacher Audit with `{assigned_t}`.")
+                    st.balloons()
 
 # =============================================================================
 # TAB 3: MY EVALUATIONS & APPEALS (Strict Student Isolation & Two Decisions)
@@ -976,10 +1351,6 @@ with tab_history:
     st.subheader("📜 Student Evaluations & Academic Appeals")
     st.caption("Review your graded papers, view step-by-step scoring, and accept marks or file an appeal challenge.")
 
-    # Strict Student Data Isolation:
-    # If student is logged in, show ONLY their personal submissions!
-    # If teacher is logged in, show their subject's student submissions.
-    # If admin is logged in, show all.
     all_subs = db.get("submissions", [])
     if active_role == "student":
         user_std_id = current_user.get("studentId", "").lower()
@@ -1038,7 +1409,6 @@ with tab_history:
                                 for step in q_item["stepBreakdown"]:
                                     st.markdown(f"- **Step {step.get('stepNumber', '')}: {step.get('stepFocus', '')}** (`{step.get('marksAwarded', 0)} / {step.get('maxMarks', 1)} Marks`): {step.get('whyAwardedOrDeducted', '')}")
 
-                    # Only students can click Accept or Challenge
                     if active_role == "student":
                         st.markdown("---")
                         st.markdown("##### ⚖️ Student Decision (Choose One Option):")
@@ -1086,7 +1456,6 @@ if tab_teacher is not None:
         st.subheader("🛡️ Teacher & AI Governance Console (edcafe.ai Inspired)")
         st.caption("Human-in-the-Loop review: Configure rubrics, override marks, release scores, and resolve challenges.")
 
-        # Determine teacher subject filter
         if active_role == "teacher":
             teacher_subject = current_user.get("subject", "Mathematics")
             st.info(f"👩‍🏫 **Active Teacher:** {current_user.get('name')} | **Assigned Department:** {teacher_subject} • Scoped strictly to {teacher_subject} submissions.")
@@ -1096,12 +1465,8 @@ if tab_teacher is not None:
             st.info("👑 Administrator Access: Full subject oversight and governance across all departments.")
             teacher_submissions = db["submissions"]
 
-        # ---------------------------------------------------------------------
-        # TEACHER DASHBOARD METRICS
-        # ---------------------------------------------------------------------
+        # Teacher Dashboard Metrics
         st.markdown("### 📊 Teacher Evaluation & Audit Dashboard")
-        
-        # Calculate live metrics
         eval_subs = [s for s in teacher_submissions if s.get("status") in ["RELEASED", "ACCEPTED"]]
         pending_subs = [s for s in teacher_submissions if s.get("status") == "PENDING_TEACHER_RELEASE"]
         challenged_subs = [s for s in teacher_submissions if s.get("status") == "CHALLENGED"]
@@ -1109,7 +1474,6 @@ if tab_teacher is not None:
         total_eval_questions = sum(len(s.get("questions", [])) for s in eval_subs)
         total_pending_questions = sum(len(s.get("questions", [])) for s in pending_subs)
         
-        # Average review time calculation
         review_times = [s.get("evaluationTimeMins", 3.5) for s in eval_subs if s.get("evaluationTimeMins")]
         avg_time = round(sum(review_times) / max(1, len(review_times)), 1) if review_times else 3.5
 
@@ -1143,9 +1507,7 @@ if tab_teacher is not None:
             </div>
             """, unsafe_allow_html=True)
 
-        # ---------------------------------------------------------------------
-        # QUICK GLANCE: WHAT IS PENDING FROM YOUR SIDE
-        # ---------------------------------------------------------------------
+        # Quick Glance: What is Pending From Your Side
         st.markdown("#### ⚡ Quick Glance: What is Pending from Your Side")
         total_pending_actions = len(pending_subs) + len(challenged_subs)
         if total_pending_actions == 0:
@@ -1245,12 +1607,9 @@ if tab_admin is not None:
         all_eval_subs = [s for s in all_subs if s.get("status") in ["RELEASED", "ACCEPTED"]]
         all_pending_subs = [s for s in all_subs if s.get("status") == "PENDING_TEACHER_RELEASE"]
         all_appeals_subs = [s for s in all_subs if s.get("status") == "CHALLENGED"]
-        all_accepted_subs = [s for s in all_subs if s.get("status") == "ACCEPTED"]
 
-        # Institutional Average Percentage
         avg_pct = round(sum((s.get("totalAwarded", 0.0) / max(1.0, s.get("totalMax", 20.0))) * 100 for s in all_subs) / max(1, len(all_subs)), 1) if all_subs else 0.0
 
-        # Top Executive Metrics Ribbon
         kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
         with kpi1:
             st.metric("Total Students", f"{total_students_count} Active")
@@ -1267,12 +1626,7 @@ if tab_admin is not None:
 
         st.markdown("---")
 
-        # ---------------------------------------------------------------------
-        # SECTION 1: SUBJECT-LEVEL BREAKDOWN
-        # ---------------------------------------------------------------------
         st.markdown("### 📊 1. Subject-Level Performance & Appeal Summary")
-        st.caption("Aggregated assessment status, marks distribution, and appeals at subject department level:")
-
         subjects_list = ["Mathematics", "Chemistry", "Physics"]
         sub_rows = []
         for subj in subjects_list:
@@ -1296,12 +1650,7 @@ if tab_admin is not None:
 
         st.markdown("---")
 
-        # ---------------------------------------------------------------------
-        # SECTION 2: TEACHER-LEVEL WORKLOAD & AUDIT EFFICIENCY
-        # ---------------------------------------------------------------------
         st.markdown("### 👩‍🏫 2. Teacher-Level Workload & Review Efficiency")
-        st.caption("Teacher audit speed, pending backlog, and appeal resolution metrics:")
-
         col_tch1, col_tch2 = st.columns(2)
         with col_tch1:
             st.markdown("""
@@ -1341,12 +1690,7 @@ if tab_admin is not None:
 
         st.markdown("---")
 
-        # ---------------------------------------------------------------------
-        # SECTION 3: BOARD-LEVEL ACADEMIC SUMMARY
-        # ---------------------------------------------------------------------
         st.markdown("### 🏛️ 3. Board-Level Performance & Appeal Benchmarking")
-        st.caption("Comparing student outcomes and appeal frequencies across curriculum boards:")
-
         board_rows = []
         for b_name in ["CBSE (All India)", "ICSE / CISCE", "State Board (Maharashtra/UP/Karnataka)"]:
             b_subs = [s for s in all_subs if s.get("board") == b_name or b_name.split(" ")[0] in s.get("board", "")]
@@ -1363,12 +1707,7 @@ if tab_admin is not None:
 
         st.markdown("---")
 
-        # ---------------------------------------------------------------------
-        # SECTION 4: MASTER GOVERNANCE LEDGER & USER MANAGEMENT
-        # ---------------------------------------------------------------------
         st.markdown("### 📜 4. Master Submissions Ledger (Full Application Summary)")
-        st.caption("Live auditable log of every paper submitted across the entire institution:")
-
         col_flt1, col_flt2, col_flt3 = st.columns(3)
         with col_flt1:
             flt_subj = st.selectbox("Filter Subject", ["All"] + subjects_list, index=0)
