@@ -13,6 +13,7 @@ import time
 import base64
 from datetime import datetime, timedelta
 import streamlit as st
+import PyPDF2
 import streamlit.components.v1 as components
 import pandas as pd
 from curriculum_question_bank import get_question_set
